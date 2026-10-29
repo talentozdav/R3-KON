@@ -1,0 +1,6 @@
+{
+  "name": "R3 Contingencies — Corporate & Affiliate Platform",
+  "description": "Enterprise contingency management, executive concierge, and multi-tier affiliate referral management platform for R3 Contingencies.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -34,7 +34,7 @@ export const RoleSwitcherModal: React.FC<RoleSwitcherModalProps> = ({
     {
       role: 'affiliate_manager' as UserRole,
       title: 'Affiliate Compliance Manager',
-      email: 'affiliates@r3contingencies.com',
+      email: 'r3affiliate.network@gmail.com',
       token: 'sess-aff-manager',
       type: 'admin',
       desc: 'Review partner applications, approve affiliates, manage onboarding.'
@@ -87,8 +87,12 @@ export const RoleSwitcherModal: React.FC<RoleSwitcherModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="relative w-full max-w-lg bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden my-8">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-[#0A192F] text-white">
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-[#D4AF37]" />
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+              alt="R3 Contingencies"
+              className="h-7 w-auto object-contain rounded bg-black px-1 border border-slate-700"
+            />
             <h3 className="text-sm font-bold">Executive & Partner Access</h3>
           </div>
           <button

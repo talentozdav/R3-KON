@@ -83,10 +83,10 @@ const db: DatabaseState = {
     },
     {
       id: 'prof-aff-manager-02',
-      email: 'affiliates@r3contingencies.com',
+      email: 'r3affiliate.network@gmail.com',
       full_name: 'Helena Lindqvist',
-      phone: '+44 20 7946 0912',
-      country: 'United Kingdom',
+      phone: '+1 (931) 366-0615',
+      country: 'United States',
       role: 'affiliate_manager',
       is_active: true,
       created_at: new Date('2026-01-05T00:00:00Z').toISOString(),

@@ -82,9 +82,23 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onContact, onPartner }) =>
 
         {/* CTA */}
         <div className="p-8 rounded-lg bg-[#0A192F] text-white flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div>
+          <div className="space-y-1.5">
             <h3 className="text-base font-bold">Have specific operational questions?</h3>
-            <p className="text-xs text-slate-300 mt-1">Our advisory desk is available for confidential discovery calls.</p>
+            <p className="text-xs text-slate-300">Our advisory desk is available for confidential discovery calls.</p>
+            <div className="text-xs text-slate-300 space-y-1 pt-1">
+              <p className="flex items-center gap-1.5">
+                <span className="text-slate-400">Email:</span>
+                <a href="mailto:r3affiliate.network@gmail.com" className="text-white hover:underline font-medium">
+                  r3affiliate.network@gmail.com
+                </a>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <span className="text-slate-400">Cell:</span>
+                <a href="tel:+19313660615" className="text-white hover:underline font-mono font-medium">
+                  +1 (931) 366-0615
+                </a>
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button

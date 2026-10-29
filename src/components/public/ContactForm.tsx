@@ -44,7 +44,7 @@ export const ContactForm: React.FC = () => {
   return (
     <section id="contact" className="py-20 bg-[#FAF9F6] border-b border-slate-200">
       <div className="max-w-4xl mx-auto px-6">
-        <div className="max-w-2xl mb-12">
+        <div className="max-w-2xl mb-8">
           <p className="text-xs font-semibold text-[#D4AF37] uppercase tracking-wider mb-2">
             Global Advisory Desk
           </p>
@@ -54,6 +54,35 @@ export const ContactForm: React.FC = () => {
           <p className="mt-3 text-sm text-slate-600">
             For bespoke contingency inquiries, corporate retainer structuring, or international representation details.
           </p>
+        </div>
+
+        {/* Direct Official Contact Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="p-5 rounded-lg border border-slate-200 bg-white shadow-xs space-y-1">
+            <span className="text-[11px] font-semibold uppercase text-slate-400 block tracking-wider">
+              Official Network Email
+            </span>
+            <a
+              href="mailto:r3affiliate.network@gmail.com"
+              className="text-sm font-bold text-[#0A192F] hover:text-[#112240] hover:underline block break-all"
+            >
+              r3affiliate.network@gmail.com
+            </a>
+            <span className="text-[11px] text-slate-500 block">Direct inquiry dispatch & partner advisory</span>
+          </div>
+
+          <div className="p-5 rounded-lg border border-slate-200 bg-white shadow-xs space-y-1">
+            <span className="text-[11px] font-semibold uppercase text-slate-400 block tracking-wider">
+              Direct Operations Cell
+            </span>
+            <a
+              href="tel:+19313660615"
+              className="text-sm font-bold text-[#0A192F] hover:text-[#112240] hover:underline font-mono block"
+            >
+              +1 (931) 366-0615
+            </a>
+            <span className="text-[11px] text-slate-500 block">24/7 principal assistance & rapid coordination</span>
+          </div>
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-8 sm:p-10 shadow-xs">
@@ -134,7 +163,7 @@ export const ContactForm: React.FC = () => {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+41 22 819 4000"
+                    placeholder="+1 (931) 366-0615"
                     className="w-full text-xs px-3.5 py-2.5 rounded border border-slate-300 focus:border-[#0A192F] focus:outline-hidden"
                   />
                 </div>

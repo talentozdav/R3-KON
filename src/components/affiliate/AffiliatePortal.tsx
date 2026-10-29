@@ -132,21 +132,28 @@ export const AffiliatePortal: React.FC<AffiliatePortalProps> = ({ token, onLogou
       {/* Top Banner Header */}
       <div className="border-b border-slate-200 bg-white">
         <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-[#0A192F] bg-slate-100 border border-slate-200 px-2 py-0.5 rounded font-mono">
-                {affiliate.affiliate_number}
-              </span>
-              <span className="text-xs text-emerald-800 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Active Partner
-              </span>
+          <div className="flex items-center gap-4">
+            <img
+              src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+              alt="R3 Contingencies"
+              className="h-10 w-auto max-w-[150px] object-contain rounded bg-black px-1.5 py-0.5 border border-slate-700 shadow-xs"
+            />
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-[#0A192F] bg-slate-100 border border-slate-200 px-2 py-0.5 rounded font-mono">
+                  {affiliate.affiliate_number}
+                </span>
+                <span className="text-xs text-emerald-800 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Active Partner
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A192F] mt-1">
+                Affiliate Partner Portal
+              </h1>
+              <p className="text-xs text-slate-500">
+                Jurisdiction: {affiliate.country} · Payout: {affiliate.payout_currency || 'USD'} · Support: <a href="mailto:r3affiliate.network@gmail.com" className="text-[#0A192F] font-medium hover:underline">r3affiliate.network@gmail.com</a> (<a href="tel:+19313660615" className="text-[#0A192F] font-mono hover:underline">+1 (931) 366-0615</a>)
+              </p>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0A192F] mt-1">
-              Affiliate Partner Portal
-            </h1>
-            <p className="text-xs text-slate-500">
-              Jurisdiction: {affiliate.country} · Payout Currency: {affiliate.payout_currency || 'USD'}
-            </p>
           </div>
 
           <div className="flex items-center gap-3">

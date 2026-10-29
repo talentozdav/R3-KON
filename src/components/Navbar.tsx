@@ -22,17 +22,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-8 px-6 py-4">
-        {/* Zone 1: Single text element wordmark */}
+        {/* Zone 1: Official Brand Logo Wordmark */}
         <button
           onClick={() => setCurrentView('home')}
-          className="flex items-center gap-2.5 text-left group transition-opacity hover:opacity-90 cursor-pointer"
+          className="flex items-center gap-3 text-left group transition-opacity hover:opacity-90 cursor-pointer"
         >
-          <div className="w-8 h-8 rounded bg-[#0A192F] flex items-center justify-center text-[#D4AF37] border border-[#D4AF37]/30 shadow-xs">
-            <Shield className="w-4 h-4" />
-          </div>
-          <span className="text-lg font-bold tracking-tight text-[#0A192F] whitespace-nowrap shrink-0">
-            R3 Contingencies
-          </span>
+          <img
+            src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+            alt="R3 Contingencies"
+            className="h-10 w-auto max-w-[170px] object-contain rounded bg-black px-1.5 py-0.5 shadow-xs border border-slate-800"
+          />
         </button>
 
         {/* Zone 2: 4–5 clean single-line text navigation links */}

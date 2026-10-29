@@ -427,9 +427,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="border-b border-slate-200 bg-[#0A192F] text-white">
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-white/10 flex items-center justify-center text-[#D4AF37] border border-[#D4AF37]/30">
-              <Shield className="w-5 h-5" />
-            </div>
+            <img
+              src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+              alt="R3 Contingencies"
+              className="h-10 w-auto max-w-[150px] object-contain rounded bg-black px-1.5 py-0.5 border border-slate-700 shadow-xs"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold tracking-tight">R3 Staff Administrative Console</h1>

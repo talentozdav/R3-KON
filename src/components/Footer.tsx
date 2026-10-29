@@ -13,19 +13,31 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentView, onOpenAuth }) =>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="space-y-4 md:col-span-1">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center text-[#D4AF37] border border-[#D4AF37]/40">
-                <Shield className="w-4 h-4" />
-              </div>
-              <span className="text-base font-bold tracking-tight text-white">
-                R3 Contingencies
-              </span>
+              <img
+                src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+                alt="R3 Contingencies"
+                className="h-10 w-auto max-w-[170px] object-contain rounded bg-black px-1.5 py-0.5 border border-slate-700 shadow-xs"
+              />
             </div>
             <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
               Specialized international emergency contingency coordination, executive concierge, and bespoke crisis logistics for high-profile principals.
             </p>
-            <div className="text-xs text-slate-400 space-y-1">
-              <p>Advisory Desk: ops@r3contingencies.com</p>
-              <p>Operations Command: Geneva · London · Zurich</p>
+            <div className="text-xs text-slate-400 space-y-1.5 pt-1">
+              <p className="flex items-center gap-1.5">
+                <span className="text-slate-500">Email:</span>
+                <a href="mailto:r3affiliate.network@gmail.com" className="text-slate-300 hover:text-white transition-colors">
+                  r3affiliate.network@gmail.com
+                </a>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <span className="text-slate-500">Cell:</span>
+                <a href="tel:+19313660615" className="text-slate-300 hover:text-white transition-colors font-mono">
+                  +1 (931) 366-0615
+                </a>
+              </p>
+              <p className="text-[11px] text-slate-500 pt-0.5">
+                Operations Command: Geneva · London · Zurich
+              </p>
             </div>
           </div>
 

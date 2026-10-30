@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Lock, AlertCircle, ArrowLeft, KeyRound, CheckCircle } from 'lucide-react';
+import { Shield, Lock, AlertCircle, ArrowLeft, KeyRound, CheckCircle, UserPlus, LogIn } from 'lucide-react';
 import type { UserRole, Profile } from '../../types/database.ts';
 
 interface AdminLoginViewProps {
@@ -11,30 +11,58 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
   onLoginSuccess,
   onReturnHome
 }) => {
+  const [isBootstrapMode, setIsBootstrapMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [bootstrapSecret, setBootstrapSecret] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
-      const response = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
+      if (isBootstrapMode) {
+        // Initial Admin Provisioning
+        const response = await fetch('/api/admin/bootstrap-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            full_name: fullName || 'System Director',
+            secret: bootstrapSecret || undefined
+          })
+        });
 
-      const data = await response.json();
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Administrator initialization failed');
+        }
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Administrative authentication failed');
+        setSuccessMessage('Administrator account initialized. You may now sign in.');
+        setIsBootstrapMode(false);
+      } else {
+        // Standard Admin Login
+        const response = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Administrative authentication failed');
+        }
+
+        onLoginSuccess(data.token, data.user);
       }
-
-      onLoginSuccess(data.token, data.user);
     } catch (err: any) {
       setError(err.message || 'Authentication error');
     } finally {
@@ -62,7 +90,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
       {/* Card */}
       <div className="relative w-full max-w-md bg-[#0A192F] border border-slate-800 rounded-lg shadow-2xl p-8 z-10 text-slate-200">
         {/* Header with Official Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-block p-2 bg-black rounded border border-slate-800 shadow-inner mb-4">
             <img
               src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
@@ -78,13 +106,44 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
           </p>
         </div>
 
+        {/* Mode Selector Toggle */}
+        <div className="flex border border-slate-800 bg-[#06101E] rounded-md p-1 mb-6 text-xs">
+          <button
+            type="button"
+            onClick={() => { setIsBootstrapMode(false); setError(null); setSuccessMessage(null); }}
+            className={`flex-1 py-1.5 px-3 rounded text-center font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+              !isBootstrapMode ? 'bg-[#D4AF37] text-[#0A192F] font-bold' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Staff Login</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setIsBootstrapMode(true); setError(null); setSuccessMessage(null); }}
+            className={`flex-1 py-1.5 px-3 rounded text-center font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+              isBootstrapMode ? 'bg-[#D4AF37] text-[#0A192F] font-bold' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Initial Admin Setup</span>
+          </button>
+        </div>
+
         {/* Security Warning Banner */}
         <div className="mb-6 p-3 bg-amber-950/40 border border-amber-800/60 rounded text-[11px] text-amber-200/90 leading-relaxed flex items-start gap-2.5">
           <Lock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold text-amber-300">Classified Area:</span> Access attempts are cryptographically signed, timestamped, and audited. Unauthorized access is strictly prohibited under international cyber legislation.
+            <span className="font-semibold text-amber-300">Classified Area:</span> Access attempts are cryptographically signed, timestamped, and audited in PostgreSQL.
           </div>
         </div>
+
+        {successMessage && (
+          <div className="mb-6 p-3 bg-emerald-950/60 border border-emerald-800 rounded text-xs text-emerald-200 flex items-start gap-2.5">
+            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="flex-1 leading-relaxed">{successMessage}</div>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-3 bg-red-950/60 border border-red-800 rounded text-xs text-red-200 flex items-start gap-2.5">
@@ -97,15 +156,31 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isBootstrapMode && (
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                Director Full Name
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Executive Director"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs bg-[#0F2444] border border-slate-700 rounded text-white placeholder-slate-500 focus:outline-hidden focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1.5">
-              Authorized Staff Email
+              {isBootstrapMode ? 'Official Director Email' : 'Authorized Staff Email'}
             </label>
             <input
               type="email"
               required
               autoFocus
-              placeholder="director@r3contingencies.com"
+              placeholder="r3affiliate.network@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs bg-[#0F2444] border border-slate-700 rounded text-white placeholder-slate-500 focus:outline-hidden focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]"
@@ -126,13 +201,33 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
             />
           </div>
 
+          {isBootstrapMode && (
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                Bootstrap Secret <span className="text-slate-500 font-normal">(Optional if first admin)</span>
+              </label>
+              <input
+                type="password"
+                placeholder="Environment secret if configuring additional admin"
+                value={bootstrapSecret}
+                onChange={(e) => setBootstrapSecret(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs bg-[#0F2444] border border-slate-700 rounded text-white placeholder-slate-500 focus:outline-hidden focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]"
+              />
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
             className="w-full mt-2 py-2.5 px-4 text-xs font-semibold text-[#0A192F] bg-[#D4AF37] hover:bg-[#E5C158] rounded transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
           >
             {loading ? (
-              <span>Authenticating Session...</span>
+              <span>Connecting with Supabase...</span>
+            ) : isBootstrapMode ? (
+              <>
+                <UserPlus className="w-4 h-4" />
+                <span>Initialize Super Administrator</span>
+              </>
             ) : (
               <>
                 <KeyRound className="w-4 h-4" />

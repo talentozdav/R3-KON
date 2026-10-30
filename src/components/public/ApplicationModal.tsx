@@ -152,7 +152,7 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onCl
                     required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="e.g. Julian Sterling"
+                    placeholder="e.g. Alexander Vance"
                     className="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:border-[#0A192F] focus:outline-hidden"
                   />
                 </div>

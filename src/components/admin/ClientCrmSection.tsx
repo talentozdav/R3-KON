@@ -549,14 +549,14 @@ export const ClientCrmSection: React.FC<ClientCrmSectionProps> = ({ token }) => 
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1">Assigned Commander</label>
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1">Assigned Staff Commander</label>
                 <select
                   value={selectedClient.assigned_staff_id || ''}
                   onChange={(e) => {
                     const staffMap: Record<string, string> = {
-                      'prof-super-admin-01': 'Arthur Vance (Super Admin)',
-                      'prof-aff-manager-02': 'Helena Lindqvist (Operations)',
-                      'prof-fin-manager-03': 'Marcus Sterling (Finance)'
+                      'staff-director': 'Executive Director',
+                      'staff-operations': 'Operations Commander',
+                      'staff-treasury': 'Finance & Treasury Manager'
                     };
                     const selectedId = e.target.value;
                     handleAssignStaff(selectedClient.id, selectedId, staffMap[selectedId] || 'Assigned Staff');
@@ -564,9 +564,9 @@ export const ClientCrmSection: React.FC<ClientCrmSectionProps> = ({ token }) => 
                   className="w-full text-xs py-1.5 px-2 border border-slate-300 rounded bg-white text-slate-800"
                 >
                   <option value="">Unassigned</option>
-                  <option value="prof-super-admin-01">Arthur Vance (Super Admin)</option>
-                  <option value="prof-aff-manager-02">Helena Lindqvist (Operations)</option>
-                  <option value="prof-fin-manager-03">Marcus Sterling (Finance)</option>
+                  <option value="staff-director">Executive Director (Super Admin)</option>
+                  <option value="staff-operations">Operations Commander (Manager)</option>
+                  <option value="staff-treasury">Finance & Treasury Manager</option>
                 </select>
               </div>
             </div>

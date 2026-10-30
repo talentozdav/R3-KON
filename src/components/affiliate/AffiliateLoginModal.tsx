@@ -91,7 +91,7 @@ export const AffiliateLoginModal: React.FC<AffiliateLoginModalProps> = ({
                 type="email"
                 required
                 autoFocus
-                placeholder="partner.sterling@crestview-concierge.ch"
+                placeholder="partner@yourcompany.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded focus:outline-hidden focus:ring-1 focus:ring-[#0A192F]"

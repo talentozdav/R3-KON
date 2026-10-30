@@ -1,28 +1,32 @@
 import React from 'react';
-import { Shield, ChevronRight, UserCheck, Lock } from 'lucide-react';
+import { UserCheck, UserPlus, LogOut } from 'lucide-react';
 import type { UserRole } from '../types/database.ts';
 
 interface NavbarProps {
   currentView: 'home' | 'about' | 'services' | 'membership' | 'flex-funds' | 'affiliates' | 'contact' | 'affiliate-portal' | 'admin-dashboard';
   setCurrentView: (view: any) => void;
   activeRole: UserRole | null;
-  onOpenAuth: () => void;
+  onOpenAffiliateAuth: () => void;
+  onOpenClientRegistration: () => void;
   onOpenApplication: () => void;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentView,
   setCurrentView,
   activeRole,
-  onOpenAuth,
-  onOpenApplication
+  onOpenAffiliateAuth,
+  onOpenClientRegistration,
+  onOpenApplication,
+  onLogout
 }) => {
   const isPortalOrAdmin = currentView === 'affiliate-portal' || currentView === 'admin-dashboard';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-8 px-6 py-4">
-        {/* Zone 1: Official Brand Logo Wordmark */}
+        {/* Brand Logo Wordmark */}
         <button
           onClick={() => setCurrentView('home')}
           className="flex items-center gap-3 text-left group transition-opacity hover:opacity-90 cursor-pointer"
@@ -34,7 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           />
         </button>
 
-        {/* Zone 2: 4–5 clean single-line text navigation links */}
+        {/* Clean Public Navigation Links */}
         <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-600">
           <button
             onClick={() => setCurrentView('about')}
@@ -86,44 +90,68 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Zone 3: Primary Action & Portal Access */}
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={onOpenAuth}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer border border-slate-200/60"
-            title="Switch portal perspective or sign in"
-          >
-            {activeRole === 'super_admin' ? (
-              <span className="flex items-center gap-1.5 text-emerald-800 font-semibold">
-                <Lock className="w-3.5 h-3.5" /> Staff Console
-              </span>
-            ) : activeRole === 'affiliate' ? (
-              <span className="flex items-center gap-1.5 text-amber-800 font-semibold">
-                <UserCheck className="w-3.5 h-3.5" /> Partner Portal
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-slate-500" /> Executive Access
-              </span>
-            )}
-          </button>
+        {/* Action Controls: Customer-facing + Partner Portal Only */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Client Registration Button */}
+          {!isPortalOrAdmin && (
+            <button
+              onClick={onOpenClientRegistration}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#0A192F] bg-amber-50 hover:bg-amber-100 border border-[#D4AF37]/50 rounded-md transition-colors whitespace-nowrap cursor-pointer shadow-2xs"
+            >
+              <UserPlus className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>Client Registration</span>
+            </button>
+          )}
 
+          {/* Partner Portal Login / Access */}
+          {activeRole === 'affiliate' ? (
+            <button
+              onClick={() => setCurrentView('affiliate-portal')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors whitespace-nowrap cursor-pointer"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Partner Portal</span>
+            </button>
+          ) : (
+            <button
+              onClick={onOpenAffiliateAuth}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-md transition-colors whitespace-nowrap cursor-pointer"
+              title="Affiliate Representative Portal Login"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-slate-500" />
+              <span>Partner Portal</span>
+            </button>
+          )}
+
+          {/* Apply as Partner */}
           {!isPortalOrAdmin && (
             <button
               onClick={onOpenApplication}
-              className="px-4 py-2 text-xs font-semibold text-white bg-[#0A192F] hover:bg-[#112240] rounded-md transition-colors whitespace-nowrap shrink-0 shadow-xs border border-[#D4AF37]/30 cursor-pointer"
+              className="hidden sm:inline-block px-3.5 py-1.5 text-xs font-semibold text-white bg-[#0A192F] hover:bg-[#112240] rounded-md transition-colors whitespace-nowrap cursor-pointer shadow-xs border border-[#D4AF37]/30"
             >
               Apply as Partner
             </button>
           )}
 
+          {/* If inside portal or admin */}
           {isPortalOrAdmin && (
-            <button
-              onClick={() => setCurrentView('home')}
-              className="px-3.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              Public Website
-            </button>
+            <>
+              <button
+                onClick={() => setCurrentView('home')}
+                className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors whitespace-nowrap cursor-pointer"
+              >
+                Public Website
+              </button>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

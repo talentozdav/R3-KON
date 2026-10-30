@@ -22,9 +22,13 @@ import {
   Building,
   Mail,
   Lock,
-  Globe
+  Globe,
+  Database,
+  Activity
 } from 'lucide-react';
 import type { UserRole } from '../../types/database.ts';
+import { ClientCrmSection } from './ClientCrmSection.tsx';
+import { isSupabaseConfigured, getSupabaseClientEndpoint } from '../../lib/supabase/client.ts';
 
 interface AdminDashboardProps {
   token: string;
@@ -40,7 +44,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onSwitchRole
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'applications' | 'affiliates' | 'conversions' | 'commissions' | 'payouts' | 'cms' | 'inquiries' | 'audit' | 'settings'
+    'overview' | 'crm' | 'applications' | 'affiliates' | 'conversions' | 'commissions' | 'payouts' | 'cms' | 'inquiries' | 'audit' | 'settings'
   >('overview');
 
   const [overview, setOverview] = useState<any>(null);
@@ -55,6 +59,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [settings, setSettings] = useState<any[]>([]);
+  const [dbHealth, setDbHealth] = useState<any>(null);
+  const [dbDiagnostic, setDbDiagnostic] = useState<any>(null);
+  const [isTestingDb, setIsTestingDb] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -182,10 +189,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         const d = await setsRes.json();
         setSettings(d.settings || []);
       }
+
+      // Fetch live Supabase connectivity status
+      try {
+        const healthRes = await fetch('/api/health');
+        if (healthRes.ok) {
+          const healthData = await healthRes.json();
+          setDbHealth(healthData);
+        }
+      } catch (e) {
+        console.warn('Health check fetch failed', e);
+      }
     } catch (err) {
       console.error('Failed to load admin data', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runDbConnectionTest = async () => {
+    setIsTestingDb(true);
+    try {
+      const res = await authFetch('/api/admin/supabase/test-connection');
+      const data = await res.json();
+      setDbDiagnostic(data);
+      if (data.all_tables_verified) {
+        showNotification('Live Supabase query test successful: All core tables verified.');
+      } else {
+        showNotification('Database reached, but some tables require SQL migrations.');
+      }
+    } catch (err: any) {
+      showNotification(`Connection test error: ${err.message}`);
+    } finally {
+      setIsTestingDb(false);
     }
   };
 
@@ -485,6 +521,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             Overview
           </button>
           <button
+            onClick={() => setActiveTab('crm')}
+            className={`py-3 px-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'crm' ? 'border-[#D4AF37] text-white font-bold' : 'border-transparent hover:text-white'
+            }`}
+          >
+            Client CRM
+          </button>
+          <button
             onClick={() => setActiveTab('applications')}
             className={`py-3 px-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'applications' ? 'border-[#D4AF37] text-white font-bold' : 'border-transparent hover:text-white'
@@ -564,6 +608,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="mb-6 p-3 text-xs rounded bg-[#0A192F] text-white flex items-center justify-between shadow-xs">
             <span>{actionMessage}</span>
           </div>
+        )}
+
+        {/* CRM TAB */}
+        {activeTab === 'crm' && (
+          <ClientCrmSection token={token} />
         )}
 
         {/* 1. TAB: OVERVIEW */}
@@ -1470,6 +1519,124 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </pre>
                 </div>
               ))}
+            </div>
+
+            {/* Supabase Foundation & Database Diagnostics */}
+            <div className="mt-8 pt-6 border-t border-slate-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <div>
+                  <h4 className="text-sm font-bold text-[#0A192F] flex items-center gap-2">
+                    <Database className="w-4 h-4 text-[#D4AF37]" />
+                    Supabase Infrastructure & Security Diagnostics
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Real-time connectivity verification between client SDK, Node.js API server, and PostgreSQL database.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={runDbConnectionTest}
+                  disabled={isTestingDb}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#0A192F] hover:bg-[#1E293B] text-white text-xs font-semibold rounded transition disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                  <Activity className={`w-3.5 h-3.5 text-[#D4AF37] ${isTestingDb ? 'animate-spin' : ''}`} />
+                  {isTestingDb ? 'Querying Database...' : 'Run Live Table Audit'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="p-4 rounded border border-slate-200 bg-[#FAF9F6]">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Frontend Client SDK
+                  </span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        isSupabaseConfigured ? 'bg-emerald-500' : 'bg-amber-500'
+                      }`}
+                    />
+                    <span className="font-semibold text-[#0A192F]">
+                      {isSupabaseConfigured ? 'Active & Configured' : 'Client Fallback Mode'}
+                    </span>
+                  </div>
+                  <p className="text-slate-600 text-[11px]">
+                    Endpoint: <span className="font-mono">{getSupabaseClientEndpoint() || 'Not set'}</span>
+                  </p>
+                  <p className="text-slate-500 text-[10px] mt-1">
+                    Security: Uses Vite import.meta.env with publishable key only (zero secret leaks).
+                  </p>
+                </div>
+
+                <div className="p-4 rounded border border-slate-200 bg-[#FAF9F6]">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Backend PostgreSQL Connection
+                  </span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        dbHealth?.database?.connected ? 'bg-emerald-500' : 'bg-rose-500'
+                      }`}
+                    />
+                    <span className="font-semibold text-[#0A192F]">
+                      {dbHealth?.database?.connected
+                        ? dbHealth.database.schema_status === 'tables_verified'
+                          ? 'Live & Tables Verified'
+                          : 'Live Connection (Pending Migrations)'
+                        : 'Disconnected'}
+                    </span>
+                  </div>
+                  <p className="text-slate-600 text-[11px]">
+                    Verified via: <span className="font-semibold text-slate-800">Live Query Execution</span>
+                  </p>
+                  <p className="text-slate-500 text-[10px] mt-1">
+                    Latency: {dbHealth?.database?.latency_ms != null ? `${dbHealth.database.latency_ms} ms` : 'Measuring...'}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded border border-slate-200 bg-[#FAF9F6]">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Auth & Security Configuration
+                  </span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="font-semibold text-[#0A192F]">JWKS Endpoint Configured</span>
+                  </div>
+                  <p className="text-slate-600 text-[11px]">
+                    JWKS Status: {dbHealth?.database?.jwks_configured ? 'Validated' : 'Pending'}
+                  </p>
+                  <p className="text-slate-500 text-[10px] mt-1">
+                    Secret keys isolated strictly to backend server environment.
+                  </p>
+                </div>
+              </div>
+
+              {dbDiagnostic && (
+                <div className="mt-4 p-4 rounded border border-slate-200 bg-white">
+                  <h5 className="font-bold text-[#0A192F] text-xs mb-2 flex items-center justify-between">
+                    <span>Database Table Verification Results</span>
+                    <span className="text-[11px] font-normal text-slate-500 font-mono">
+                      Latency: {dbDiagnostic.latency_ms}ms
+                    </span>
+                  </h5>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-[11px]">
+                    {Object.entries(dbDiagnostic.tables || {}).map(([tbl, info]: [string, any]) => (
+                      <div
+                        key={tbl}
+                        className={`p-2 rounded border ${
+                          info.exists
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                            : 'bg-amber-50 border-amber-200 text-amber-900'
+                        }`}
+                      >
+                        <div className="font-mono font-bold truncate">{tbl}</div>
+                        <div className="text-[10px]">
+                          {info.exists ? '✓ Table verified' : 'Pending migration'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

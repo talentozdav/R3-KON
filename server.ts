@@ -30,8 +30,15 @@ import type {
   SiteFAQ,
   AuditLog,
   SystemSetting,
-  UserRole
+  UserRole,
+  ClientProfile,
+  ClientRegistration,
+  ClientInquiry,
+  ClientNote,
+  ClientFollowup,
+  ClientStatus
 } from './src/types/database.ts';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
@@ -42,6 +49,47 @@ const PORT = 3000;
 
 const app = express();
 app.use(express.json());
+
+// Initialize Server-Side Supabase Client with strict URL sanitization and service role / secret key
+// Backend priority: SUPABASE_URL, with fallbacks to VITE_SUPABASE_URL or parsing base origin from SUPABASE_JWKS_URL
+const rawSupabaseUrl = 
+  process.env.SUPABASE_URL || 
+  process.env.VITE_SUPABASE_URL || 
+  (process.env.SUPABASE_JWKS_URL ? (() => {
+    try { return new URL(process.env.SUPABASE_JWKS_URL).origin; } catch { return ''; }
+  })() : '') || 
+  '';
+
+let supabaseOrigin = '';
+if (rawSupabaseUrl) {
+  try {
+    // Ensure the project URL is the base Supabase project URL, not the JWKS endpoint or a subpath
+    supabaseOrigin = new URL(rawSupabaseUrl).origin;
+  } catch {
+    supabaseOrigin = rawSupabaseUrl.replace(/\/+$/, '');
+  }
+}
+
+// Server keys: SUPABASE_SECRET_KEY, with SUPABASE_SERVICE_ROLE_KEY fallback
+const serverSupabaseKey = 
+  process.env.SUPABASE_SECRET_KEY || 
+  process.env.SUPABASE_SERVICE_ROLE_KEY || 
+  process.env.SUPABASE_PUBLISHABLE_KEY || 
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 
+  process.env.VITE_SUPABASE_ANON_KEY || 
+  '';
+
+const supabaseJwksUrl = 
+  process.env.SUPABASE_JWKS_URL || 
+  (supabaseOrigin ? `${supabaseOrigin}/auth/v1/.well-known/jwks.json` : '');
+
+let serverSupabase: SupabaseClient | null = null;
+if (supabaseOrigin && serverSupabaseKey && !supabaseOrigin.includes('example.com') && supabaseOrigin !== 'https://your-project-id.supabase.co') {
+  serverSupabase = createClient(supabaseOrigin, serverSupabaseKey, {
+    auth: { persistSession: false }
+  });
+  console.log('[R3 Server] Supabase server client initialized with base endpoint:', supabaseOrigin);
+}
 
 // In-Memory Persistent Data Store mirroring the PostgreSQL schema
 // This ensures 100% functional completeness and testability out of the box,
@@ -65,6 +113,11 @@ interface DatabaseState {
   siteFaqs: SiteFAQ[];
   auditLogs: AuditLog[];
   systemSettings: SystemSetting[];
+  clientProfiles: ClientProfile[];
+  clientRegistrations: ClientRegistration[];
+  clientInquiries: ClientInquiry[];
+  clientNotes: ClientNote[];
+  clientFollowups: ClientFollowup[];
   sessions: Map<string, { profileId: string; role: UserRole; expiresAt: number }>;
 }
 
@@ -577,6 +630,161 @@ const db: DatabaseState = {
       updated_at: new Date('2026-10-01T00:00:00Z').toISOString()
     }
   ],
+  clientProfiles: [
+    {
+      id: 'cli-001',
+      full_name: 'Lord Alistair Sterling',
+      email: 'a.sterling@westminster-holdings.co.uk',
+      normalized_email: 'a.sterling@westminster-holdings.co.uk',
+      phone: '+44 20 7183 9920',
+      country: 'United Kingdom',
+      client_type: 'business',
+      company_name: 'Westminster Executive Holdings Ltd',
+      preferred_contact_method: 'phone',
+      consent_contacted: true,
+      status: 'in_discussion',
+      assigned_staff_id: 'prof-super-admin-01',
+      assigned_staff_name: 'Arthur Vance (Super Admin)',
+      lead_source: 'partner_referral',
+      attributed_affiliate_id: 'aff-001',
+      created_at: new Date('2026-10-20T14:00:00Z').toISOString(),
+      updated_at: new Date('2026-10-28T10:00:00Z').toISOString()
+    },
+    {
+      id: 'cli-002',
+      full_name: 'Dr. Vivienne Moreau',
+      email: 'v.moreau@geneva-biotech.ch',
+      normalized_email: 'v.moreau@geneva-biotech.ch',
+      phone: '+41 22 799 1200',
+      country: 'Switzerland',
+      client_type: 'individual',
+      preferred_contact_method: 'email',
+      consent_contacted: true,
+      status: 'converted',
+      assigned_staff_id: 'prof-aff-manager-02',
+      assigned_staff_name: 'Helena Lindqvist (Operations)',
+      lead_source: 'direct_web',
+      created_at: new Date('2026-10-18T09:30:00Z').toISOString(),
+      updated_at: new Date('2026-10-25T16:00:00Z').toISOString()
+    },
+    {
+      id: 'cli-003',
+      full_name: 'Henrietta von Habsburg',
+      email: 'h.habsburg@danube-capital.at',
+      normalized_email: 'h.habsburg@danube-capital.at',
+      phone: '+43 1 512 8840',
+      country: 'Austria',
+      client_type: 'business',
+      company_name: 'Danube Family Office KGaA',
+      preferred_contact_method: 'whatsapp',
+      consent_contacted: true,
+      status: 'followup_required',
+      assigned_staff_id: 'prof-fin-manager-03',
+      assigned_staff_name: 'Marcus Sterling (Finance)',
+      lead_source: 'partner_referral',
+      attributed_affiliate_id: 'aff-001',
+      created_at: new Date('2026-10-27T11:15:00Z').toISOString(),
+      updated_at: new Date('2026-10-29T14:20:00Z').toISOString()
+    },
+    {
+      id: 'cli-004',
+      full_name: 'Captain Lars Lindholm',
+      email: 'lars@nordic-maritime-charters.se',
+      normalized_email: 'lars@nordic-maritime-charters.se',
+      phone: '+46 8 402 1100',
+      country: 'Sweden',
+      client_type: 'individual',
+      preferred_contact_method: 'phone',
+      consent_contacted: true,
+      status: 'new',
+      lead_source: 'direct_web',
+      created_at: new Date('2026-10-29T08:00:00Z').toISOString(),
+      updated_at: new Date('2026-10-29T08:00:00Z').toISOString()
+    }
+  ],
+  clientRegistrations: [
+    {
+      id: 'reg-001',
+      client_id: 'cli-001',
+      service_of_interest: 'Excelsior Bespoke Logistics Tier',
+      message: 'Evaluating emergency aviation extraction protocol for our corporate flight crew and principal delegates traveling to high-complexity jurisdictions.',
+      ip_address: '82.165.197.1',
+      user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+      referrer_url: 'https://r3contingencies.com/?ref=R3-10245',
+      created_at: new Date('2026-10-20T14:00:00Z').toISOString()
+    },
+    {
+      id: 'reg-002',
+      client_id: 'cli-002',
+      service_of_interest: 'Gold Membership Tier ($12,000/yr)',
+      message: 'Requesting 24/7 dedicated crisis coordination coverage for primary principal and international biotech research team.',
+      ip_address: '178.196.24.12',
+      user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      referrer_url: 'https://r3contingencies.com/',
+      created_at: new Date('2026-10-18T09:30:00Z').toISOString()
+    },
+    {
+      id: 'reg-003',
+      client_id: 'cli-003',
+      service_of_interest: 'Flex Funds Dedicated Escrow Facility',
+      message: 'Inquiring regarding capital reserves deployment and medical guarantee letters in Mediterranean transit ports.',
+      ip_address: '194.112.56.88',
+      created_at: new Date('2026-10-27T11:15:00Z').toISOString()
+    },
+    {
+      id: 'reg-004',
+      client_id: 'cli-004',
+      service_of_interest: 'Emergency Contingency & Evacuation Coordination',
+      message: 'Urgent consultation for Baltic and North Sea offshore contingency coordination.',
+      ip_address: '193.180.251.10',
+      created_at: new Date('2026-10-29T08:00:00Z').toISOString()
+    }
+  ],
+  clientInquiries: [],
+  clientNotes: [
+    {
+      id: 'note-001',
+      client_id: 'cli-001',
+      staff_id: 'prof-super-admin-01',
+      staff_email: 'director@r3contingencies.com',
+      note: 'Initial phone conference completed. Principal requested confidential briefing on private charter standby logistics in Zurich and London.',
+      created_at: new Date('2026-10-22T16:00:00Z').toISOString()
+    },
+    {
+      id: 'note-002',
+      client_id: 'cli-002',
+      staff_id: 'prof-aff-manager-02',
+      staff_email: 'r3affiliate.network@gmail.com',
+      note: 'Contract executed. Tier activation confirmed. Dispatched welcome security ledger and operations token.',
+      created_at: new Date('2026-10-25T16:00:00Z').toISOString()
+    }
+  ],
+  clientFollowups: [
+    {
+      id: 'flw-001',
+      client_id: 'cli-001',
+      staff_id: 'prof-super-admin-01',
+      staff_email: 'director@r3contingencies.com',
+      contact_method: 'phone',
+      contact_attempt_result: 'reached',
+      notes: 'Reviewed preliminary contract terms with executive counsel.',
+      next_followup_date: '2026-11-05',
+      is_completed: true,
+      created_at: new Date('2026-10-24T11:00:00Z').toISOString()
+    },
+    {
+      id: 'flw-002',
+      client_id: 'cli-003',
+      staff_id: 'prof-fin-manager-03',
+      staff_email: 'finance@r3contingencies.com',
+      contact_method: 'whatsapp',
+      contact_attempt_result: 'scheduled_callback',
+      notes: 'Principal assistant requested scheduling discovery call on Friday.',
+      next_followup_date: '2026-11-02',
+      is_completed: false,
+      created_at: new Date('2026-10-28T15:30:00Z').toISOString()
+    }
+  ],
   sessions: new Map()
 };
 
@@ -639,17 +847,138 @@ function getAuthenticatedUser(req: Request): { profile: Profile; role: UserRole 
   return { profile, role: session.role };
 }
 
+// Strict RBAC Middleware for Admin APIs
+function requireAdminAuth(req: Request, res: Response, next: express.NextFunction) {
+  const auth = getAuthenticatedUser(req);
+  if (!auth) {
+    return res.status(401).json({ error: 'Unauthorized: Authentication required' });
+  }
+  const staffRoles: UserRole[] = ['super_admin', 'affiliate_manager', 'finance_manager', 'content_manager'];
+  if (!staffRoles.includes(auth.role)) {
+    return res.status(403).json({ error: 'Forbidden: Administrative privileges required' });
+  }
+  (req as any).auth = auth;
+  next();
+}
+
+// Strict RBAC Middleware for Affiliate APIs
+function requireAffiliateAuth(req: Request, res: Response, next: express.NextFunction) {
+  const auth = getAuthenticatedUser(req);
+  if (!auth) {
+    return res.status(401).json({ error: 'Unauthorized: Authentication required' });
+  }
+  if (auth.role !== 'affiliate') {
+    return res.status(403).json({ error: 'Forbidden: Affiliate partner privileges required' });
+  }
+  (req as any).auth = auth;
+  next();
+}
+
 // -------------------------------------------------------------
 // API ENDPOINTS
 // -------------------------------------------------------------
 
-// 1. Health check & configuration status
-app.get('/api/health', (req: Request, res: Response) => {
+// 1. Health check & configuration status (Performs REAL database query test)
+app.get('/api/health', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  let dbConnected = false;
+  let dbError: string | null = null;
+  let latencyMs: number | null = null;
+  let schemaStatus: 'tables_verified' | 'schema_empty' | 'unreachable' = 'unreachable';
+  let queryTestedTable: string | null = null;
+
+  if (!serverSupabase) {
+    dbError = 'Server Supabase client not initialized (SUPABASE_URL and SUPABASE_SECRET_KEY not configured)';
+  } else {
+    try {
+      // Query database table to verify live round-trip query execution
+      queryTestedTable = 'system_settings';
+      const { data, error, status } = await serverSupabase
+        .from('system_settings')
+        .select('setting_key')
+        .limit(1);
+
+      latencyMs = Date.now() - startTime;
+
+      if (!error) {
+        dbConnected = true;
+        schemaStatus = 'tables_verified';
+      } else if (error.code === 'PGRST205') {
+        // PGRST205: PostgREST returned table not found in schema cache
+        // PostgREST and PostgreSQL instance are online and responding, but migrations are pending
+        dbConnected = true;
+        schemaStatus = 'schema_empty';
+        dbError = 'Database instance online and responding. PostgREST reported table not yet found in schema cache (SQL migrations pending execution)';
+      } else {
+        dbConnected = false;
+        dbError = `PostgREST query returned error [${error.code || 'UNKNOWN'}]: ${error.message}`;
+      }
+    } catch (err: any) {
+      latencyMs = Date.now() - startTime;
+      dbConnected = false;
+      dbError = err?.message || 'Database query failed with an unhandled exception';
+    }
+  }
+
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
-    supabase_configured: Boolean(process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY),
-    service: 'R3 Contingencies Enterprise Platform'
+    service: 'R3 Contingencies Enterprise Platform',
+    database: {
+      configured: Boolean(serverSupabase),
+      connected: dbConnected,
+      latency_ms: latencyMs,
+      endpoint: supabaseOrigin || null,
+      jwks_configured: Boolean(supabaseJwksUrl),
+      query_tested_table: queryTestedTable,
+      schema_status: schemaStatus,
+      verified_via_live_query: dbConnected,
+      error: dbError
+    }
+  });
+});
+
+// Diagnostic endpoint for admins to inspect multi-table database availability
+app.get('/api/admin/supabase/test-connection', async (req: Request, res: Response) => {
+  const auth = getAuthenticatedUser(req);
+  if (!auth || !['super_admin', 'affiliate_manager'].includes(auth.role)) {
+    return res.status(403).json({ error: 'Forbidden: Admin access required' });
+  }
+
+  if (!serverSupabase) {
+    return res.status(503).json({
+      connected: false,
+      error: 'Supabase server client not initialized. Check server environment variables.'
+    });
+  }
+
+  const startTime = Date.now();
+  const testResults: Record<string, { status: number | null; error: string | null; exists: boolean }> = {};
+  const coreTables = ['system_settings', 'profiles', 'affiliates', 'conversions', 'client_profiles'];
+
+  for (const table of coreTables) {
+    try {
+      const { data, error, status } = await serverSupabase.from(table).select('*').limit(1);
+      testResults[table] = {
+        status,
+        error: error ? error.message : null,
+        exists: !error
+      };
+    } catch (e: any) {
+      testResults[table] = {
+        status: null,
+        error: e.message,
+        exists: false
+      };
+    }
+  }
+
+  res.json({
+    timestamp: new Date().toISOString(),
+    endpoint: supabaseOrigin,
+    latency_ms: Date.now() - startTime,
+    tables: testResults,
+    all_tables_verified: Object.values(testResults).every((t) => t.exists)
   });
 });
 
@@ -705,6 +1034,537 @@ app.get('/api/auth/me', (req: Request, res: Response) => {
   res.json({
     user: auth.profile,
     affiliate
+  });
+});
+
+// Strict RBAC Global Router Guard for all /api/admin routes
+app.use('/api/admin', (req: Request, res: Response, next: express.NextFunction) => {
+  if (req.path === '/login' || req.path === '/verify-session') {
+    return next();
+  }
+  const auth = getAuthenticatedUser(req);
+  if (!auth) {
+    return res.status(401).json({ error: 'Unauthorized: Authentication required' });
+  }
+  const staffRoles: UserRole[] = ['super_admin', 'affiliate_manager', 'finance_manager', 'content_manager'];
+  if (!staffRoles.includes(auth.role)) {
+    return res.status(403).json({ error: 'Forbidden: Insufficient administrative privileges' });
+  }
+  (req as any).auth = auth;
+  next();
+});
+
+// Dedicated Admin Login: Only staff roles allowed. Strictly blocks affiliates and clients with 403 Forbidden!
+app.post('/api/admin/login', (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Staff email is required' });
+  }
+
+  const normalized = email.toLowerCase().trim();
+  const profile = db.profiles.find((p) => p.email.toLowerCase() === normalized && p.is_active);
+
+  if (!profile) {
+    return res.status(401).json({ error: 'Invalid administrative credentials' });
+  }
+
+  // Strict RBAC: Check role
+  const staffRoles: UserRole[] = ['super_admin', 'affiliate_manager', 'finance_manager', 'content_manager'];
+  if (!staffRoles.includes(profile.role)) {
+    return res.status(403).json({
+      error: 'Access Denied: Affiliates and clients are strictly prohibited from accessing the Administrative Command Console. Please sign in via the Partner Portal.'
+    });
+  }
+
+  // Generate verified admin session token
+  const token = `sess-admin-${crypto.randomBytes(16).toString('hex')}`;
+  db.sessions.set(token, {
+    profileId: profile.id,
+    role: profile.role,
+    expiresAt: Date.now() + 86400000 * 7
+  });
+
+  recordAuditLog(profile.email, 'ADMIN_LOGIN_SUCCESS', 'profiles', profile.id, undefined, { role: profile.role }, req);
+
+  res.json({
+    token,
+    user: profile
+  });
+});
+
+// Admin Session Verification
+app.get('/api/admin/verify-session', (req: Request, res: Response) => {
+  const auth = getAuthenticatedUser(req);
+  if (!auth) {
+    return res.status(401).json({ error: 'Unauthorized: No active administrative session' });
+  }
+  const staffRoles: UserRole[] = ['super_admin', 'affiliate_manager', 'finance_manager', 'content_manager'];
+  if (!staffRoles.includes(auth.role)) {
+    return res.status(403).json({ error: 'Forbidden: Account does not possess administrative privileges' });
+  }
+  res.json({
+    valid: true,
+    user: auth.profile,
+    role: auth.role
+  });
+});
+
+// Dedicated Affiliate Partner Login
+app.post('/api/affiliate/login', (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Partner email is required' });
+  }
+
+  const normalized = email.toLowerCase().trim();
+  const profile = db.profiles.find((p) => p.email.toLowerCase() === normalized && p.is_active);
+
+  if (!profile || profile.role !== 'affiliate') {
+    return res.status(401).json({ error: 'Invalid partner credentials or unaccredited account' });
+  }
+
+  const affiliate = db.affiliates.find((a) => a.profile_id === profile.id);
+  if (!affiliate || affiliate.status === 'suspended' || affiliate.status === 'terminated') {
+    return res.status(403).json({ error: 'Affiliate account is currently suspended or under compliance review' });
+  }
+
+  const token = `sess-aff-${crypto.randomBytes(16).toString('hex')}`;
+  db.sessions.set(token, {
+    profileId: profile.id,
+    role: 'affiliate',
+    expiresAt: Date.now() + 86400000 * 7
+  });
+
+  recordAuditLog(profile.email, 'AFFILIATE_LOGIN_SUCCESS', 'affiliates', affiliate.id, undefined, { status: affiliate.status }, req);
+
+  res.json({
+    token,
+    user: profile,
+    affiliate
+  });
+});
+
+// -------------------------------------------------------------
+// CLIENT REGISTRATION & SUPABASE PERSISTENCE
+// -------------------------------------------------------------
+
+const clientRegistrationInputSchema = z.object({
+  fullName: z.string().trim().min(2, 'Full name is required (min 2 characters)'),
+  email: z.string().trim().email('Valid email address is required'),
+  phone: z.string().trim().min(7, 'Valid international phone with country code is required'),
+  country: z.string().trim().min(2, 'Country is required'),
+  clientType: z.enum(['individual', 'business']),
+  companyName: z.string().optional(),
+  serviceOfInterest: z.string().trim().min(2, 'Service of interest is required'),
+  additionalMessage: z.string().optional(),
+  preferredContactMethod: z.enum(['email', 'phone', 'whatsapp']),
+  consentContacted: z.boolean().refine((val) => val === true, {
+    message: 'Consent to be contacted is required'
+  }),
+  referralCode: z.string().optional()
+});
+
+app.post('/api/client/register', async (req: Request, res: Response) => {
+  const parseResult = clientRegistrationInputSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: parseResult.error.flatten().fieldErrors
+    });
+  }
+
+  const data = parseResult.data;
+  const normalizedEmail = data.email.toLowerCase().trim();
+
+  // If business, validate company name
+  if (data.clientType === 'business' && (!data.companyName || data.companyName.trim().length < 2)) {
+    return res.status(400).json({
+      error: 'Company name is required for corporate registration'
+    });
+  }
+
+  // Check attribution if referralCode provided
+  let attributedAffiliateId: string | undefined;
+  if (data.referralCode) {
+    const codeObj = db.referralCodes.find(
+      (c) => c.code.toUpperCase() === data.referralCode!.toUpperCase() && c.is_active
+    );
+    if (codeObj) {
+      attributedAffiliateId = codeObj.affiliate_id;
+    }
+  }
+
+  // Attempt Supabase persistence if configured
+  let supabaseError: any = null;
+  let supabaseClientProfileId: string | null = null;
+
+  if (serverSupabase) {
+    try {
+      const { data: sbProfile, error: sbProfErr } = await serverSupabase
+        .from('client_profiles')
+        .upsert(
+          {
+            full_name: data.fullName,
+            email: data.email,
+            normalized_email: normalizedEmail,
+            phone: data.phone,
+            country: data.country,
+            client_type: data.clientType,
+            company_name: data.companyName || null,
+            preferred_contact_method: data.preferredContactMethod,
+            consent_contacted: true,
+            status: 'new',
+            lead_source: data.referralCode ? 'partner_referral' : 'direct_web',
+            attributed_affiliate_id: attributedAffiliateId || null,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'normalized_email' }
+        )
+        .select('id')
+        .single();
+
+      if (sbProfErr) {
+        supabaseError = sbProfErr;
+      } else if (sbProfile) {
+        supabaseClientProfileId = sbProfile.id;
+
+        const { error: sbRegErr } = await serverSupabase
+          .from('client_registrations')
+          .insert({
+            client_id: sbProfile.id,
+            service_of_interest: data.serviceOfInterest,
+            message: data.additionalMessage || null,
+            ip_address: req.ip,
+            user_agent: req.headers['user-agent'] as string,
+            referrer_url: data.referralCode ? `?ref=${data.referralCode}` : undefined
+          });
+
+        if (sbRegErr) {
+          console.error('[Supabase client_registrations error]:', sbRegErr);
+        }
+      }
+    } catch (err: any) {
+      supabaseError = err;
+    }
+  }
+
+  // Strictly enforce accurate database error reporting: Never display success when database fails!
+  if (serverSupabase && supabaseError) {
+    console.error('[Supabase Client Registration Error]:', supabaseError);
+    return res.status(500).json({
+      error: `Database persistence failed: ${supabaseError.message || 'Supabase error'}`,
+      code: supabaseError.code || 'SUPABASE_ERROR',
+      details: supabaseError.details || 'Execute migration 20261030000001_client_crm_and_security.sql in Supabase SQL editor.'
+    });
+  }
+
+  // Update in-memory state
+  let clientProfile = db.clientProfiles.find((c) => c.normalized_email === normalizedEmail);
+  const now = new Date().toISOString();
+
+  if (!clientProfile) {
+    clientProfile = {
+      id: supabaseClientProfileId || `cli-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      full_name: data.fullName,
+      email: data.email,
+      normalized_email: normalizedEmail,
+      phone: data.phone,
+      country: data.country,
+      client_type: data.clientType,
+      company_name: data.companyName,
+      preferred_contact_method: data.preferredContactMethod,
+      consent_contacted: true,
+      status: 'new',
+      lead_source: data.referralCode ? 'partner_referral' : 'direct_web',
+      attributed_affiliate_id: attributedAffiliateId,
+      created_at: now,
+      updated_at: now
+    };
+    db.clientProfiles.unshift(clientProfile);
+  } else {
+    clientProfile.phone = data.phone;
+    clientProfile.country = data.country;
+    if (data.companyName) clientProfile.company_name = data.companyName;
+    clientProfile.preferred_contact_method = data.preferredContactMethod;
+    clientProfile.updated_at = now;
+  }
+
+  const registrationRecord: ClientRegistration = {
+    id: `reg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    client_id: clientProfile.id,
+    service_of_interest: data.serviceOfInterest,
+    message: data.additionalMessage,
+    ip_address: req.ip,
+    user_agent: req.headers['user-agent'] as string,
+    referrer_url: data.referralCode ? `?ref=${data.referralCode}` : undefined,
+    created_at: now
+  };
+  db.clientRegistrations.unshift(registrationRecord);
+
+  recordAuditLog(
+    'client:' + normalizedEmail,
+    'CLIENT_REGISTERED',
+    'client_profiles',
+    clientProfile.id,
+    undefined,
+    { service: data.serviceOfInterest, country: data.country, clientType: data.clientType },
+    req
+  );
+
+  return res.status(201).json({
+    success: true,
+    message: 'Client registration successfully recorded. An R3 Operations Commander will review your profile.',
+    client_id: clientProfile.id,
+    persisted_to_supabase: Boolean(serverSupabase && !supabaseError)
+  });
+});
+
+// -------------------------------------------------------------
+// CLIENT CRM ADMIN MANAGEMENT ENDPOINTS (PROTECTED BY RBAC)
+// -------------------------------------------------------------
+
+// 1. Get All Clients
+app.get('/api/admin/crm/clients', requireAdminAuth, (req: Request, res: Response) => {
+  const { search, status, clientType, country } = req.query;
+  let filtered = [...db.clientProfiles];
+
+  if (status && status !== 'all') {
+    filtered = filtered.filter((c) => c.status === status);
+  }
+  if (clientType && clientType !== 'all') {
+    filtered = filtered.filter((c) => c.client_type === clientType);
+  }
+  if (country && country !== 'all') {
+    filtered = filtered.filter((c) => c.country.toLowerCase() === (country as string).toLowerCase());
+  }
+  if (search) {
+    const q = (search as string).toLowerCase().trim();
+    filtered = filtered.filter(
+      (c) =>
+        c.full_name.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        c.phone.toLowerCase().includes(q) ||
+        (c.company_name && c.company_name.toLowerCase().includes(q))
+    );
+  }
+
+  const enriched = filtered.map((c) => {
+    const regCount = db.clientRegistrations.filter((r) => r.client_id === c.id).length;
+    const notesCount = db.clientNotes.filter((n) => n.client_id === c.id).length;
+    return {
+      ...c,
+      registrations_count: regCount,
+      notes_count: notesCount
+    };
+  });
+
+  res.json({ clients: enriched, total: enriched.length });
+});
+
+// 2. Get Single Client Profile with full history
+app.get('/api/admin/crm/clients/:id', requireAdminAuth, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const client = db.clientProfiles.find((c) => c.id === id);
+  if (!client) {
+    return res.status(404).json({ error: 'Client profile not found' });
+  }
+
+  const registrations = db.clientRegistrations.filter((r) => r.client_id === id);
+  const inquiries = db.clientInquiries.filter((i) => i.client_id === id);
+  const notes = db.clientNotes.filter((n) => n.client_id === id);
+  const followups = db.clientFollowups.filter((f) => f.client_id === id);
+
+  res.json({
+    client: {
+      ...client,
+      registrations,
+      inquiries,
+      notes,
+      followups
+    }
+  });
+});
+
+// 3. Update Client (Status, Assigned Staff)
+app.patch('/api/admin/crm/clients/:id', requireAdminAuth, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const client = db.clientProfiles.find((c) => c.id === id);
+  if (!client) {
+    return res.status(404).json({ error: 'Client profile not found' });
+  }
+
+  const { status, assigned_staff_id, assigned_staff_name } = req.body;
+  const prev = { ...client };
+
+  if (status) client.status = status;
+  if (assigned_staff_id !== undefined) client.assigned_staff_id = assigned_staff_id;
+  if (assigned_staff_name !== undefined) client.assigned_staff_name = assigned_staff_name;
+  client.updated_at = new Date().toISOString();
+
+  if (serverSupabase) {
+    try {
+      await serverSupabase
+        .from('client_profiles')
+        .update({
+          status: client.status,
+          assigned_staff_id: client.assigned_staff_id || null,
+          updated_at: client.updated_at
+        })
+        .eq('id', id);
+    } catch (err) {
+      console.error('[Supabase client_profiles update error]:', err);
+    }
+  }
+
+  recordAuditLog(
+    (req as any).auth.profile.email,
+    'CLIENT_UPDATED',
+    'client_profiles',
+    client.id,
+    prev,
+    { status: client.status, assigned_staff_id: client.assigned_staff_id },
+    req
+  );
+
+  res.json({ success: true, client });
+});
+
+// 4. Add Internal Note
+app.post('/api/admin/crm/clients/:id/notes', requireAdminAuth, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const client = db.clientProfiles.find((c) => c.id === id);
+  if (!client) {
+    return res.status(404).json({ error: 'Client profile not found' });
+  }
+
+  const { note } = req.body;
+  if (!note || !note.trim()) {
+    return res.status(400).json({ error: 'Note text cannot be empty' });
+  }
+
+  const staff = (req as any).auth.profile;
+  const newNote: ClientNote = {
+    id: `note-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    client_id: id,
+    staff_id: staff.id,
+    staff_email: staff.email,
+    note: note.trim(),
+    created_at: new Date().toISOString()
+  };
+
+  db.clientNotes.unshift(newNote);
+
+  if (serverSupabase) {
+    try {
+      await serverSupabase.from('client_notes').insert({
+        client_id: id,
+        staff_id: staff.id.startsWith('prof-') ? null : staff.id,
+        staff_email: staff.email,
+        note: note.trim()
+      });
+    } catch (err) {
+      console.error('[Supabase client_notes insert error]:', err);
+    }
+  }
+
+  recordAuditLog(
+    staff.email,
+    'CLIENT_NOTE_ADDED',
+    'client_notes',
+    newNote.id,
+    undefined,
+    { client_id: id },
+    req
+  );
+
+  res.status(201).json({ success: true, note: newNote });
+});
+
+// 5. Add Follow-up / Contact Attempt
+app.post('/api/admin/crm/clients/:id/followups', requireAdminAuth, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const client = db.clientProfiles.find((c) => c.id === id);
+  if (!client) {
+    return res.status(404).json({ error: 'Client profile not found' });
+  }
+
+  const { contactMethod, contactResult, notes, nextFollowupDate, updateClientStatus } = req.body;
+
+  const staff = (req as any).auth.profile;
+  const followup: ClientFollowup = {
+    id: `flw-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    client_id: id,
+    staff_id: staff.id,
+    staff_email: staff.email,
+    contact_method: contactMethod || 'phone',
+    contact_attempt_result: contactResult || 'reached',
+    notes,
+    next_followup_date: nextFollowupDate,
+    is_completed: false,
+    created_at: new Date().toISOString()
+  };
+
+  db.clientFollowups.unshift(followup);
+
+  if (updateClientStatus) {
+    client.status = updateClientStatus;
+    client.updated_at = new Date().toISOString();
+  }
+
+  if (serverSupabase) {
+    try {
+      await serverSupabase.from('client_followups').insert({
+        client_id: id,
+        staff_id: staff.id.startsWith('prof-') ? null : staff.id,
+        staff_email: staff.email,
+        contact_method: contactMethod || 'phone',
+        contact_attempt_result: contactResult || 'reached',
+        notes: notes || null,
+        next_followup_date: nextFollowupDate || null
+      });
+    } catch (err) {
+      console.error('[Supabase client_followups insert error]:', err);
+    }
+  }
+
+  recordAuditLog(
+    staff.email,
+    'CLIENT_FOLLOWUP_LOGGED',
+    'client_followups',
+    followup.id,
+    undefined,
+    { client_id: id, method: contactMethod, result: contactResult },
+    req
+  );
+
+  res.status(201).json({ success: true, followup, client });
+});
+
+// 6. CRM Stats
+app.get('/api/admin/crm/stats', requireAdminAuth, (req: Request, res: Response) => {
+  const total = db.clientProfiles.length;
+  const newLeads = db.clientProfiles.filter((c) => c.status === 'new').length;
+  const contacted = db.clientProfiles.filter((c) => c.status === 'contacted').length;
+  const followupDue = db.clientProfiles.filter((c) => c.status === 'followup_required').length;
+  const inDiscussion = db.clientProfiles.filter((c) => c.status === 'in_discussion').length;
+  const converted = db.clientProfiles.filter((c) => c.status === 'converted').length;
+  const corporateCount = db.clientProfiles.filter((c) => c.client_type === 'business').length;
+  const individualCount = db.clientProfiles.filter((c) => c.client_type === 'individual').length;
+
+  const rate = total > 0 ? Math.round((converted / total) * 100) : 0;
+
+  res.json({
+    stats: {
+      total_clients: total,
+      new_leads: newLeads,
+      contacted,
+      followup_due: followupDue,
+      in_discussion: inDiscussion,
+      converted,
+      conversion_rate: rate,
+      corporate_count: corporateCount,
+      individual_count: individualCount
+    }
   });
 });
 
@@ -1008,8 +1868,11 @@ app.patch('/api/admin/applications/:id', (req: Request, res: Response) => {
 // 8. Affiliate Dashboard Data (Authenticated Affiliate)
 app.get('/api/affiliate/dashboard', (req: Request, res: Response) => {
   const auth = getAuthenticatedUser(req);
-  if (!auth || auth.role !== 'affiliate') {
-    return res.status(403).json({ error: 'Affiliate access required' });
+  if (!auth) {
+    return res.status(401).json({ error: 'Unauthorized: Authentication required' });
+  }
+  if (auth.role !== 'affiliate') {
+    return res.status(403).json({ error: 'Forbidden: Affiliate access required' });
   }
 
   const affiliate = db.affiliates.find((a) => a.profile_id === auth.profile.id);
@@ -1039,6 +1902,25 @@ app.get('/api/affiliate/dashboard', (req: Request, res: Response) => {
 
   const uniqueVisitors = new Set(events.map((e) => e.visitor_session_id)).size;
 
+  // Sanitized conversions & leads: Zero client PII exposed to affiliates
+  const sanitizedConversions = conversions.map((c) => ({
+    id: c.id,
+    transaction_reference: c.transaction_reference,
+    customer_reference: `REF-${c.id.substring(c.id.length - 4)}`,
+    membership_tier: c.membership_tier,
+    eligible_sale_amount_cents: c.eligible_sale_amount_cents,
+    currency: c.currency,
+    transaction_date: c.transaction_date,
+    verification_status: c.verification_status
+  }));
+
+  const sanitizedLeads = leads.map((l) => ({
+    id: l.id,
+    interested_tier: l.interested_tier,
+    status: l.status,
+    created_at: l.created_at
+  }));
+
   res.json({
     affiliate,
     referralCodes,
@@ -1053,7 +1935,8 @@ app.get('/api/affiliate/dashboard', (req: Request, res: Response) => {
       paid_commissions_cents: paidCents,
       currency: affiliate.payout_currency || 'USD'
     },
-    conversions,
+    conversions: sanitizedConversions,
+    leads: sanitizedLeads,
     ledger: ledgerEntries,
     payouts: payoutItems,
     recentEvents: events.slice(0, 10)

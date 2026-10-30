@@ -1,12 +1,16 @@
 import React from 'react';
-import { Shield } from 'lucide-react';
 
 interface FooterProps {
   setCurrentView: (view: any) => void;
-  onOpenAuth: () => void;
+  onOpenAffiliateAuth: () => void;
+  onOpenClientRegistration: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ setCurrentView, onOpenAuth }) => {
+export const Footer: React.FC<FooterProps> = ({
+  setCurrentView,
+  onOpenAffiliateAuth,
+  onOpenClientRegistration
+}) => {
   return (
     <footer className="border-t border-slate-200 bg-[#0A192F] text-slate-300">
       <div className="max-w-7xl mx-auto px-6 py-14">
@@ -67,6 +71,11 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentView, onOpenAuth }) =>
                 </button>
               </li>
               <li>
+                <button onClick={onOpenClientRegistration} className="hover:text-white transition-colors cursor-pointer text-[#D4AF37]">
+                  Client Registration & Intake
+                </button>
+              </li>
+              <li>
                 <button onClick={() => setCurrentView('contact')} className="hover:text-white transition-colors cursor-pointer">
                   Global Operations Desk
                 </button>
@@ -85,18 +94,18 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentView, onOpenAuth }) =>
                 </button>
               </li>
               <li>
-                <button onClick={onOpenAuth} className="hover:text-white transition-colors cursor-pointer">
+                <button onClick={onOpenAffiliateAuth} className="hover:text-white transition-colors cursor-pointer">
                   Partner Portal Login
-                </button>
-              </li>
-              <li>
-                <button onClick={onOpenAuth} className="hover:text-white transition-colors cursor-pointer">
-                  Staff Administrative Console
                 </button>
               </li>
               <li>
                 <a href="#compliance" className="hover:text-white transition-colors">
                   Compliance & Referral Standards
+                </a>
+              </li>
+              <li>
+                <a href="#privacy" className="hover:text-white transition-colors">
+                  International Non-Disclosure Terms
                 </a>
               </li>
             </ul>
@@ -110,21 +119,8 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentView, onOpenAuth }) =>
               R3 Contingencies is a private contingency coordination firm. R3 is neither an insurance underwriter nor a direct medical clinic. All deployments subject to operational agreements and local regulatory frameworks.
             </p>
             <p className="text-[11px] text-slate-500">
-              © {new Date().getFullYear()} R3 Contingencies. All rights reserved worldwide.
+              © {new Date().getFullYear()} R3 Contingencies. All worldwide rights reserved.
             </p>
-          </div>
-        </div>
-
-        <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div className="flex items-center gap-4">
-            <span>Confidentiality Notice</span>
-            <span aria-hidden="true">·</span>
-            <span>Privacy Notice</span>
-            <span aria-hidden="true">·</span>
-            <span>Terms of Engagement</span>
-          </div>
-          <div className="text-right">
-            <span>Enterprise Contingency Infrastructure</span>
           </div>
         </div>
       </div>

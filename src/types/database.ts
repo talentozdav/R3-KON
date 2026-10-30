@@ -7,7 +7,8 @@ export type UserRole =
   | 'affiliate_manager' 
   | 'finance_manager' 
   | 'content_manager' 
-  | 'affiliate';
+  | 'affiliate'
+  | 'client';
 
 export type ApplicationStatus = 
   | 'submitted' 
@@ -310,4 +311,82 @@ export interface SystemSetting {
   is_approved_by_r3: boolean;
   updated_by?: string;
   updated_at: string;
+}
+
+export type ClientStatus = 
+  | 'new' 
+  | 'contacted' 
+  | 'followup_required' 
+  | 'in_discussion' 
+  | 'converted' 
+  | 'not_interested' 
+  | 'closed';
+
+export interface ClientProfile {
+  id: string;
+  full_name: string;
+  email: string;
+  normalized_email: string;
+  phone: string;
+  country: string;
+  client_type: 'individual' | 'business';
+  company_name?: string;
+  preferred_contact_method: 'email' | 'phone' | 'whatsapp';
+  consent_contacted: boolean;
+  status: ClientStatus;
+  assigned_staff_id?: string;
+  assigned_staff_name?: string;
+  lead_source?: string;
+  attributed_affiliate_id?: string;
+  created_at: string;
+  updated_at: string;
+  // Included relations
+  registrations?: ClientRegistration[];
+  inquiries?: ClientInquiry[];
+  notes?: ClientNote[];
+  followups?: ClientFollowup[];
+}
+
+export interface ClientRegistration {
+  id: string;
+  client_id: string;
+  service_of_interest: string;
+  message?: string;
+  ip_address?: string;
+  user_agent?: string;
+  referrer_url?: string;
+  created_at: string;
+}
+
+export interface ClientInquiry {
+  id: string;
+  client_id: string;
+  subject: string;
+  service_category?: string;
+  details: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientNote {
+  id: string;
+  client_id: string;
+  staff_id?: string;
+  staff_email: string;
+  note: string;
+  created_at: string;
+}
+
+export interface ClientFollowup {
+  id: string;
+  client_id: string;
+  staff_id?: string;
+  staff_email: string;
+  contact_method: 'email' | 'phone' | 'whatsapp' | 'in_person' | 'other';
+  contact_attempt_result: 'reached' | 'no_answer' | 'left_voicemail' | 'scheduled_callback' | 'converted' | 'declined';
+  notes?: string;
+  next_followup_date?: string;
+  is_completed: boolean;
+  created_at: string;
 }

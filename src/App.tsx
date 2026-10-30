@@ -19,9 +19,12 @@ import { ApplicationModal } from './components/public/ApplicationModal.tsx';
 import { AboutPage } from './components/public/AboutPage.tsx';
 import { ServicesPage } from './components/public/ServicesPage.tsx';
 import { AffiliatePortal } from './components/affiliate/AffiliatePortal.tsx';
+import { AffiliateLoginModal } from './components/affiliate/AffiliateLoginModal.tsx';
 import { AdminDashboard } from './components/admin/AdminDashboard.tsx';
-import { RoleSwitcherModal } from './components/RoleSwitcherModal.tsx';
-import type { UserRole } from './types/database.ts';
+import { AdminLoginView } from './components/admin/AdminLoginView.tsx';
+import { ClientRegistrationModal } from './components/public/ClientRegistrationModal.tsx';
+import type { UserRole, Profile } from './types/database.ts';
+import { supabase, isSupabaseConfigured } from './lib/supabase/client.ts';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<
@@ -31,9 +34,48 @@ export default function App() {
   const [activeRole, setActiveRole] = useState<UserRole | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAffiliateAuthOpen, setIsAffiliateAuthOpen] = useState(false);
+  const [isClientRegOpen, setIsClientRegOpen] = useState(false);
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
   const [activeRefCode, setActiveRefCode] = useState<string | null>(null);
+
+  // Synchronize route on initial mount (e.g. direct navigation to /admin) and check Supabase auth
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/admin' || path.startsWith('/admin')) {
+      setCurrentView('admin-dashboard');
+    }
+
+    // Check if session exists in sessionStorage
+    const savedToken = sessionStorage.getItem('r3_auth_token');
+    const savedRole = sessionStorage.getItem('r3_auth_role') as UserRole;
+    if (savedToken && savedRole) {
+      setAuthToken(savedToken);
+      setActiveRole(savedRole);
+    }
+
+    // If frontend Supabase client is initialized, sync auth session if available
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data?.session?.access_token && !savedToken) {
+          setAuthToken(data.session.access_token);
+        }
+      }).catch((err) => {
+        console.warn('[R3 Frontend] Supabase session check error:', err);
+      });
+
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.access_token) {
+          setAuthToken(session.access_token);
+          sessionStorage.setItem('r3_auth_token', session.access_token);
+        }
+      });
+
+      return () => {
+        authListener?.subscription?.unsubscribe();
+      };
+    }
+  }, []);
 
   // Initialize and handle referral link tracking from URL (?ref=R3-XXXXX)
   useEffect(() => {
@@ -67,28 +109,85 @@ export default function App() {
     }
   }, []);
 
-  const handleSelectRole = (role: UserRole, token: string) => {
-    setActiveRole(role);
+  const handleAdminLoginSuccess = (token: string, user: Profile) => {
     setAuthToken(token);
+    setActiveRole(user.role);
+    sessionStorage.setItem('r3_auth_token', token);
+    sessionStorage.setItem('r3_auth_role', user.role);
     setCurrentView('admin-dashboard');
+    window.history.pushState(null, '', '/admin');
   };
 
-  const handleSelectAffiliate = (token: string) => {
-    setActiveRole('affiliate');
+  const handleAffiliateLoginSuccess = (token: string, affiliateData: any) => {
     setAuthToken(token);
+    setActiveRole('affiliate');
+    sessionStorage.setItem('r3_auth_token', token);
+    sessionStorage.setItem('r3_auth_role', 'affiliate');
     setCurrentView('affiliate-portal');
   };
 
   const handleLogout = () => {
+    sessionStorage.removeItem('r3_auth_token');
+    sessionStorage.removeItem('r3_auth_role');
     setActiveRole(null);
     setAuthToken(null);
     setCurrentView('home');
+    if (window.location.pathname === '/admin') {
+      window.history.pushState(null, '', '/');
+    }
   };
+
+  const handleNavigateView = (view: any) => {
+    if (view === 'admin-dashboard') {
+      window.history.pushState(null, '', '/admin');
+    } else if (window.location.pathname === '/admin') {
+      window.history.pushState(null, '', '/');
+    }
+    setCurrentView(view);
+  };
+
+  // If on admin view, check if user is authenticated with a valid staff role
+  const isStaffRole = activeRole && ['super_admin', 'affiliate_manager', 'finance_manager', 'content_manager'].includes(activeRole);
+
+  if (currentView === 'admin-dashboard') {
+    if (!authToken || !isStaffRole) {
+      return (
+        <AdminLoginView
+          onLoginSuccess={handleAdminLoginSuccess}
+          onReturnHome={() => handleNavigateView('home')}
+        />
+      );
+    }
+    return (
+      <div className="min-h-screen flex flex-col font-sans bg-[#FAF9F6] text-slate-900">
+        <Navbar
+          currentView={currentView}
+          setCurrentView={handleNavigateView}
+          activeRole={activeRole}
+          onOpenAffiliateAuth={() => setIsAffiliateAuthOpen(true)}
+          onOpenClientRegistration={() => setIsClientRegOpen(true)}
+          onOpenApplication={() => setIsApplicationModalOpen(true)}
+          onLogout={handleLogout}
+        />
+        <main className="flex-1">
+          <AdminDashboard
+            token={authToken}
+            activeRole={activeRole}
+            onLogout={handleLogout}
+            onSwitchRole={(role) => {
+              setActiveRole(role);
+              sessionStorage.setItem('r3_auth_role', role);
+            }}
+          />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-[#FAF9F6] text-slate-900">
       {/* Referral Banner if visitor arrived via affiliate code */}
-      {activeRefCode && currentView !== 'affiliate-portal' && currentView !== 'admin-dashboard' && (
+      {activeRefCode && currentView !== 'affiliate-portal' && (
         <div className="bg-[#0A192F] text-white text-xs px-6 py-2 text-center border-b border-[#D4AF37]/30 flex items-center justify-center gap-2">
           <span className="text-[#D4AF37] font-semibold">Priority Partner Referral:</span>
           <span>
@@ -98,13 +197,15 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Navigation */}
+      {/* Main Navigation - Customer Facing & Partner Portal Only */}
       <Navbar
         currentView={currentView}
-        setCurrentView={setCurrentView}
+        setCurrentView={handleNavigateView}
         activeRole={activeRole}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenAffiliateAuth={() => setIsAffiliateAuthOpen(true)}
+        onOpenClientRegistration={() => setIsClientRegOpen(true)}
         onOpenApplication={() => setIsApplicationModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Content View Router */}
@@ -121,19 +222,17 @@ export default function App() {
             <CapabilitiesBento />
             <MembershipTiers
               onSelectTier={(tier) => {
-                const el = document.getElementById('contact');
-                el?.scrollIntoView({ behavior: 'smooth' });
+                setIsClientRegOpen(true);
               }}
             />
             <FlexFundsSection
               onInquire={() => {
-                const el = document.getElementById('contact');
-                el?.scrollIntoView({ behavior: 'smooth' });
+                setIsClientRegOpen(true);
               }}
             />
             <AffiliateSection
               onApply={() => setIsApplicationModalOpen(true)}
-              onOpenPortal={() => setIsAuthModalOpen(true)}
+              onOpenPortal={() => setIsAffiliateAuthOpen(true)}
             />
             <FaqSection />
             <ContactForm />
@@ -149,14 +248,14 @@ export default function App() {
 
         {currentView === 'services' && (
           <ServicesPage
-            onInquire={() => setCurrentView('contact')}
+            onInquire={() => setIsClientRegOpen(true)}
           />
         )}
 
         {currentView === 'membership' && (
           <div className="py-12">
             <MembershipTiers
-              onSelectTier={(tier) => setCurrentView('contact')}
+              onSelectTier={(tier) => setIsClientRegOpen(true)}
             />
             <FaqSection />
             <ContactForm />
@@ -166,7 +265,7 @@ export default function App() {
         {currentView === 'flex-funds' && (
           <div className="py-12">
             <FlexFundsSection
-              onInquire={() => setCurrentView('contact')}
+              onInquire={() => setIsClientRegOpen(true)}
             />
             <FaqSection />
             <ContactForm />
@@ -177,7 +276,7 @@ export default function App() {
           <div className="py-12">
             <AffiliateSection
               onApply={() => setIsApplicationModalOpen(true)}
-              onOpenPortal={() => setIsAuthModalOpen(true)}
+              onOpenPortal={() => setIsAffiliateAuthOpen(true)}
             />
             <FaqSection />
           </div>
@@ -190,35 +289,33 @@ export default function App() {
         )}
 
         {/* Affiliate Partner Authenticated Portal */}
-        {currentView === 'affiliate-portal' && authToken && (
+        {currentView === 'affiliate-portal' && authToken && activeRole === 'affiliate' && (
           <AffiliatePortal token={authToken} onLogout={handleLogout} />
-        )}
-
-        {/* Administrative Staff Dashboard */}
-        {currentView === 'admin-dashboard' && authToken && activeRole && (
-          <AdminDashboard
-            token={authToken}
-            activeRole={activeRole}
-            onLogout={handleLogout}
-            onSwitchRole={(role) => setActiveRole(role)}
-          />
         )}
       </main>
 
       {/* Footer */}
-      {currentView !== 'affiliate-portal' && currentView !== 'admin-dashboard' && (
+      {currentView !== 'affiliate-portal' && (
         <Footer
-          setCurrentView={setCurrentView}
-          onOpenAuth={() => setIsAuthModalOpen(true)}
+          setCurrentView={handleNavigateView}
+          onOpenAffiliateAuth={() => setIsAffiliateAuthOpen(true)}
+          onOpenClientRegistration={() => setIsClientRegOpen(true)}
         />
       )}
 
-      {/* Role / Auth Modal */}
-      <RoleSwitcherModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onSelectRole={handleSelectRole}
-        onSelectAffiliate={handleSelectAffiliate}
+      {/* Client Registration Modal */}
+      <ClientRegistrationModal
+        isOpen={isClientRegOpen}
+        onClose={() => setIsClientRegOpen(false)}
+        referralCode={activeRefCode}
+      />
+
+      {/* Affiliate Partner Login Modal */}
+      <AffiliateLoginModal
+        isOpen={isAffiliateAuthOpen}
+        onClose={() => setIsAffiliateAuthOpen(false)}
+        onLoginSuccess={handleAffiliateLoginSuccess}
+        onOpenApplication={() => setIsApplicationModalOpen(true)}
       />
 
       {/* Affiliate Partner Application Modal */}

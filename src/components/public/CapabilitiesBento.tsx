@@ -1,5 +1,6 @@
 import React from 'react';
 import { Shield, Plane, Truck, Headphones, Briefcase, FileCheck } from 'lucide-react';
+import { medicalEvacuationImg, conciergeHqImg, secureLogisticsImg } from '../../assets/images/index.ts';
 
 export const CapabilitiesBento: React.FC = () => {
   return (
@@ -35,9 +36,8 @@ export const CapabilitiesBento: React.FC = () => {
             </div>
             <div className="relative h-64 sm:h-72 w-full overflow-hidden border-t border-slate-200">
               <img
-                src="/src/assets/images/service_medical_evacuation_1793266608168.jpg"
+                src={medicalEvacuationImg}
                 alt="R3 Medical Evacuation Aircraft and Emergency Crew"
-                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
@@ -63,9 +63,8 @@ export const CapabilitiesBento: React.FC = () => {
             </div>
             <div className="relative h-56 w-full overflow-hidden border-t border-slate-200">
               <img
-                src="/src/assets/images/service_concierge_hq_1793266608252.jpg"
+                src={conciergeHqImg}
                 alt="24/7 Crisis Command Dispatch Room"
-                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
@@ -91,9 +90,8 @@ export const CapabilitiesBento: React.FC = () => {
             </div>
             <div className="relative h-56 w-full overflow-hidden border-t border-slate-200">
               <img
-                src="/src/assets/images/service_secure_logistics_1793266608773.jpg"
+                src={secureLogisticsImg}
                 alt="Discreet Armored Executive Transport Convoy"
-                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />

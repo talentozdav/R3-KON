@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Lock, AlertCircle, ArrowLeft, KeyRound, CheckCircle, UserPlus, LogIn } from 'lucide-react';
 import type { UserRole, Profile } from '../../types/database.ts';
+import { r3Logo } from '../../assets/images/index.ts';
 
 interface AdminLoginViewProps {
   onLoginSuccess: (token: string, user: Profile) => void;
@@ -93,7 +94,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
         <div className="text-center mb-6">
           <div className="inline-block p-2 bg-black rounded border border-slate-800 shadow-inner mb-4">
             <img
-              src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+              src={r3Logo}
               alt="R3 Contingencies"
               className="h-10 w-auto object-contain mx-auto"
             />

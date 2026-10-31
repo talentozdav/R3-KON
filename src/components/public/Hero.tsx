@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight, ShieldCheck, Globe, Clock, CreditCard } from 'lucide-react';
+import { heroCoordinationImg } from '../../assets/images/index.ts';
 
 interface HeroProps {
   onExplore: () => void;
@@ -54,9 +55,8 @@ export const Hero: React.FC<HeroProps> = ({ onExplore, onPartner }) => {
           <div className="lg:col-span-5">
             <div className="relative rounded-lg overflow-hidden border border-slate-300 shadow-md bg-slate-900 group">
               <img
-                src="/src/assets/images/hero_contingency_executive_1793266606881.jpg"
+                src={heroCoordinationImg}
                 alt="R3 Contingencies Executive Coordination Operations Room"
-                referrerPolicy="no-referrer"
                 className="w-full h-80 sm:h-96 lg:h-[420px] object-cover transition-transform duration-500 group-hover:scale-102"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />

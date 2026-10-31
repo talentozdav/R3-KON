@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserCheck, UserPlus, LogOut } from 'lucide-react';
 import type { UserRole } from '../types/database.ts';
+import { r3Logo } from '../assets/images/index.ts';
 
 interface NavbarProps {
   currentView: 'home' | 'about' | 'services' | 'membership' | 'flex-funds' | 'affiliates' | 'contact' | 'affiliate-portal' | 'admin-dashboard';
@@ -32,7 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex items-center gap-3 text-left group transition-opacity hover:opacity-90 cursor-pointer"
         >
           <img
-            src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+            src={r3Logo}
             alt="R3 Contingencies"
             className="h-10 w-auto max-w-[170px] object-contain rounded bg-black px-1.5 py-0.5 shadow-xs border border-slate-800"
           />

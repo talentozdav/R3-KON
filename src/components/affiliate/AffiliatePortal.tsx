@@ -16,6 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import type { Affiliate, Profile } from '../../types/database.ts';
+import { r3Logo } from '../../assets/images/index.ts';
 
 interface AffiliatePortalProps {
   token: string;
@@ -134,7 +135,7 @@ export const AffiliatePortal: React.FC<AffiliatePortalProps> = ({ token, onLogou
         <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <img
-              src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+              src={r3Logo}
               alt="R3 Contingencies"
               className="h-10 w-auto max-w-[150px] object-contain rounded bg-black px-1.5 py-0.5 border border-slate-700 shadow-xs"
             />

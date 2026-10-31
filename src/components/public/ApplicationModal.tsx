@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, AlertCircle, Building2, User, Shield } from 'lucide-react';
+import { r3Logo } from '../../assets/images/index.ts';
 
 interface ApplicationModalProps {
   isOpen: boolean;
@@ -61,7 +62,7 @@ export const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onCl
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-[#0A192F] text-white">
           <div className="flex items-center gap-2.5">
             <img
-              src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+              src={r3Logo}
               alt="R3 Contingencies"
               className="h-7 w-auto object-contain rounded bg-black px-1 border border-slate-700"
             />

@@ -1,5 +1,11 @@
 import React from 'react';
 import { ArrowRight, Plane, Shield, Truck, AlertCircle, PhoneCall, Headphones, FileText, CheckCircle } from 'lucide-react';
+import {
+  medicalEvacuationImg,
+  secureLogisticsImg,
+  heroCoordinationImg,
+  conciergeHqImg
+} from '../../assets/images/index.ts';
 
 interface ServicesPageProps {
   onInquire: () => void;
@@ -12,7 +18,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onInquire }) => {
       number: '01',
       title: 'Emergency Assistance & Medical Evacuation Coordination',
       category: 'Crisis Response',
-      image: '/src/assets/images/service_medical_evacuation_1793266608168.jpg',
+      image: medicalEvacuationImg,
       description: 'Orchestration of emergency aeromedical evacuation, private air ambulances with onboard intensive care units, and bilateral hospital transfer logistics.',
       involves: [
         'Vetted private aircraft selection and fast-track flight clearances',
@@ -28,7 +34,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onInquire }) => {
       number: '02',
       title: 'Armored Transportation & Secure Logistics',
       category: 'Mobility & Protection',
-      image: '/src/assets/images/service_secure_logistics_1793266608773.jpg',
+      image: secureLogisticsImg,
       description: 'Coordination of discreet, armored executive vehicles, vetted security chauffeurs, and tactical itinerary routing in metropolitan and remote environments.',
       involves: [
         'B6/B7 armored vehicle procurement and logistical positioning',
@@ -44,7 +50,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onInquire }) => {
       number: '03',
       title: 'Travel Disruption & Emergency Aviation Rerouting',
       category: 'Mobility Logistics',
-      image: '/src/assets/images/hero_contingency_executive_1793266606881.jpg',
+      image: heroCoordinationImg,
       description: 'Immediate rechartering, airspace workaround planning, and priority commercial airline rebooking during strikes, geopolitical tensions, or severe weather.',
       involves: [
         'Rapid private jet charter routing through regional fixed-base operators (FBOs)',
@@ -60,7 +66,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onInquire }) => {
       number: '04',
       title: 'Executive Concierge & 24/7 Global Dispatch Desk',
       category: 'Command & Advisory',
-      image: '/src/assets/images/service_concierge_hq_1793266608252.jpg',
+      image: conciergeHqImg,
       description: 'Centralized operational support for international principals, handling discreet personal logistics, urgent overseas procurement, and communications relay.',
       involves: [
         'Continuous monitoring of global geopolitical flashpoints and travel alerts',

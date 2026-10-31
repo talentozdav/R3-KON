@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, UserCheck, AlertCircle, KeyRound, ArrowRight } from 'lucide-react';
 import type { Profile } from '../../types/database.ts';
+import { r3Logo } from '../../assets/images/index.ts';
 
 interface AffiliateLoginModalProps {
   isOpen: boolean;
@@ -56,7 +57,7 @@ export const AffiliateLoginModal: React.FC<AffiliateLoginModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-[#0A192F] text-white">
           <div className="flex items-center gap-3">
             <img
-              src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+              src={r3Logo}
               alt="R3 Contingencies"
               className="h-7 w-auto object-contain rounded bg-black px-1.5 py-0.5 border border-slate-700"
             />

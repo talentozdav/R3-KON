@@ -289,6 +289,42 @@ async function runTestSuite() {
       assert(vercelJson.outputDirectory === 'dist', 'Vercel outputDirectory specified as dist');
     }
 
+    // ---------------------------------------------------------
+    // TEST SUITE 9: PRODUCTION IMAGE ASSET INTEGRITY AUDIT
+    // ---------------------------------------------------------
+    console.log('\n[9/9] Image Asset Resolution & Production Path Audit:');
+    const requiredPublicImages = [
+      'global-coordination.jpg',
+      'hero-contingency-executive.jpg',
+      'service-medical-evacuation.jpg',
+      'service-concierge-hq.jpg',
+      'service-secure-logistics.jpg',
+      'r3-logo.jpg'
+    ];
+    for (const imgName of requiredPublicImages) {
+      const imgPath = path.resolve('./public/images', imgName);
+      assert(fs.existsSync(imgPath), `Static public image exists: /public/images/${imgName}`);
+    }
+
+    // Verify no component uses unbundled /src/assets paths in production
+    const unbundledReferences: string[] = [];
+    function scanUnbundledPaths(dir: string) {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          scanUnbundledPaths(fullPath);
+        } else if (/\.(tsx|ts|jsx|js|html)$/.test(entry.name)) {
+          const content = fs.readFileSync(fullPath, 'utf8');
+          if (content.includes('src="/src/assets/') || content.includes("image: '/src/assets/")) {
+            unbundledReferences.push(fullPath);
+          }
+        }
+      }
+    }
+    scanUnbundledPaths(path.resolve('./src'));
+    assert(unbundledReferences.length === 0, 'Zero raw /src/assets/ strings in frontend components', unbundledReferences.join(', '));
+
   } finally {
     testServer.close();
   }

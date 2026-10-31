@@ -2102,8 +2102,10 @@ app.patch('/api/admin/affiliates/:id/status', requireAdminAuth, async (req: Requ
 });
 
 // -------------------------------------------------------------
-// VITE DEV SERVER / PRODUCTION STATIC HOSTING
+// STATIC ASSET & SPA MIDDLEWARE (DEV & PRODUCTION)
 // -------------------------------------------------------------
+app.use(express.static(path.resolve(__dirname, 'public')));
+
 export async function startServer() {
   if (!isProduction) {
     const { createServer: createViteServer } = await import('vite');

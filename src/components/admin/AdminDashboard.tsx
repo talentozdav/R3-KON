@@ -29,6 +29,7 @@ import {
 import type { UserRole } from '../../types/database.ts';
 import { ClientCrmSection } from './ClientCrmSection.tsx';
 import { isSupabaseConfigured, getSupabaseClientEndpoint } from '../../lib/supabase/client.ts';
+import { r3Logo } from '../../assets/images/index.ts';
 
 interface AdminDashboardProps {
   token: string;
@@ -464,7 +465,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img
-              src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+              src={r3Logo}
               alt="R3 Contingencies"
               className="h-10 w-auto max-w-[150px] object-contain rounded bg-black px-1.5 py-0.5 border border-slate-700 shadow-xs"
             />

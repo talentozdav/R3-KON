@@ -1,4 +1,5 @@
 import React from 'react';
+import { r3Logo } from '../assets/images/index.ts';
 
 interface FooterProps {
   setCurrentView: (view: any) => void;
@@ -18,7 +19,7 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="space-y-4 md:col-span-1">
             <div className="flex items-center gap-2.5">
               <img
-                src="/assets/aistudio/Screenshot_20261029_112009_Gallery_b65df3d1.jpg"
+                src={r3Logo}
                 alt="R3 Contingencies"
                 className="h-10 w-auto max-w-[170px] object-contain rounded bg-black px-1.5 py-0.5 border border-slate-700 shadow-xs"
               />

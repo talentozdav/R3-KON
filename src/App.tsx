@@ -23,32 +23,50 @@ import { AffiliateLoginModal } from './components/affiliate/AffiliateLoginModal.
 import { AdminDashboard } from './components/admin/AdminDashboard.tsx';
 import { AdminLoginView } from './components/admin/AdminLoginView.tsx';
 import { ClientRegistrationModal } from './components/public/ClientRegistrationModal.tsx';
+import { AffiliatePartnershipPage } from './components/public/AffiliatePartnershipPage.tsx';
+import { AssociateRegistrationPage } from './components/public/AssociateRegistrationPage.tsx';
+import { MemberLoginModal } from './components/public/MemberLoginModal.tsx';
+import { MemberDashboard } from './components/member/MemberDashboard.tsx';
 import type { UserRole, Profile } from './types/database.ts';
 import { supabase, isSupabaseConfigured } from './lib/supabase/client.ts';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<
-    'home' | 'about' | 'services' | 'membership' | 'flex-funds' | 'affiliates' | 'contact' | 'affiliate-portal' | 'admin-dashboard'
+    'home' | 'about' | 'services' | 'membership' | 'flex-funds' | 'affiliates' | 'affiliate-partnership' | 'associate-register' | 'contact' | 'affiliate-portal' | 'member-portal' | 'admin-dashboard'
   >('home');
 
   const [activeRole, setActiveRole] = useState<UserRole | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [memberData, setMemberData] = useState<any | null>(null);
 
   const [isAffiliateAuthOpen, setIsAffiliateAuthOpen] = useState(false);
+  const [isMemberAuthOpen, setIsMemberAuthOpen] = useState(false);
   const [isClientRegOpen, setIsClientRegOpen] = useState(false);
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
   const [activeRefCode, setActiveRefCode] = useState<string | null>(null);
 
-  // Synchronize route on initial mount (e.g. direct navigation to /admin) and check Supabase auth
+  // Synchronize route on initial mount (e.g. direct navigation to /admin or /affiliate-partnership)
   useEffect(() => {
     const path = window.location.pathname;
     if (path === '/admin' || path.startsWith('/admin')) {
       setCurrentView('admin-dashboard');
+    } else if (path === '/affiliate-partnership' || path === '/affiliates') {
+      setCurrentView('affiliate-partnership');
+    } else if (path === '/associate/register' || path === '/associate-register') {
+      setCurrentView('associate-register');
+    } else if (path === '/membership') {
+      setCurrentView('membership');
+    } else if (path === '/member/dashboard' || path === '/member-portal') {
+      setCurrentView('member-portal');
     }
 
     // Check if session exists in sessionStorage
     const savedToken = sessionStorage.getItem('r3_auth_token');
     const savedRole = sessionStorage.getItem('r3_auth_role') as UserRole;
+    const savedMember = sessionStorage.getItem('r3_member_data');
+    if (savedMember) {
+      try { setMemberData(JSON.parse(savedMember)); } catch {}
+    }
     if (savedToken && savedRole) {
       setAuthToken(savedToken);
       setActiveRole(savedRole);
@@ -126,6 +144,16 @@ export default function App() {
     setCurrentView('affiliate-portal');
   };
 
+  const handleMemberLoginSuccess = (token: string, clientData: any) => {
+    setAuthToken(token);
+    setActiveRole('client');
+    setMemberData(clientData);
+    sessionStorage.setItem('r3_auth_token', token);
+    sessionStorage.setItem('r3_auth_role', 'client');
+    sessionStorage.setItem('r3_member_data', JSON.stringify(clientData));
+    setCurrentView('member-portal');
+  };
+
   const handleLogout = () => {
     sessionStorage.removeItem('r3_auth_token');
     sessionStorage.removeItem('r3_auth_role');
@@ -167,6 +195,7 @@ export default function App() {
           onOpenAffiliateAuth={() => setIsAffiliateAuthOpen(true)}
           onOpenClientRegistration={() => setIsClientRegOpen(true)}
           onOpenApplication={() => setIsApplicationModalOpen(true)}
+          onOpenMemberAuth={() => setIsMemberAuthOpen(true)}
           onLogout={handleLogout}
         />
         <main className="flex-1">
@@ -205,6 +234,7 @@ export default function App() {
         onOpenAffiliateAuth={() => setIsAffiliateAuthOpen(true)}
         onOpenClientRegistration={() => setIsClientRegOpen(true)}
         onOpenApplication={() => setIsApplicationModalOpen(true)}
+        onOpenMemberAuth={() => setIsMemberAuthOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -272,14 +302,28 @@ export default function App() {
           </div>
         )}
 
-        {currentView === 'affiliates' && (
-          <div className="py-12">
-            <AffiliateSection
-              onApply={() => setIsApplicationModalOpen(true)}
-              onOpenPortal={() => setIsAffiliateAuthOpen(true)}
-            />
-            <FaqSection />
-          </div>
+        {/* Dedicated Affiliate Partnership Page */}
+        {(currentView === 'affiliate-partnership' || currentView === 'affiliates') && (
+          <AffiliatePartnershipPage
+            onApply={() => setIsApplicationModalOpen(true)}
+            onOpenPortal={() => setIsAffiliateAuthOpen(true)}
+          />
+        )}
+
+        {/* Dedicated Associate Registration Page */}
+        {currentView === 'associate-register' && (
+          <AssociateRegistrationPage
+            onSuccessReturn={() => setCurrentView('affiliate-partnership')}
+          />
+        )}
+
+        {/* Dedicated Member Portal */}
+        {currentView === 'member-portal' && (
+          <MemberDashboard
+            token={authToken || 'session'}
+            onLogout={handleLogout}
+            clientData={memberData}
+          />
         )}
 
         {currentView === 'contact' && (
@@ -295,7 +339,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      {currentView !== 'affiliate-portal' && (
+      {currentView !== 'affiliate-portal' && currentView !== 'member-portal' && (
         <Footer
           setCurrentView={handleNavigateView}
           onOpenAffiliateAuth={() => setIsAffiliateAuthOpen(true)}
@@ -303,11 +347,19 @@ export default function App() {
         />
       )}
 
-      {/* Client Registration Modal */}
+      {/* Client / Member Registration Modal */}
       <ClientRegistrationModal
         isOpen={isClientRegOpen}
         onClose={() => setIsClientRegOpen(false)}
         referralCode={activeRefCode}
+      />
+
+      {/* Member Portal Login Modal */}
+      <MemberLoginModal
+        isOpen={isMemberAuthOpen}
+        onClose={() => setIsMemberAuthOpen(false)}
+        onLoginSuccess={handleMemberLoginSuccess}
+        onOpenRegistration={() => setIsClientRegOpen(true)}
       />
 
       {/* Affiliate Partner Login Modal */}
@@ -318,11 +370,14 @@ export default function App() {
         onOpenApplication={() => setIsApplicationModalOpen(true)}
       />
 
-      {/* Affiliate Partner Application Modal */}
-      <ApplicationModal
-        isOpen={isApplicationModalOpen}
-        onClose={() => setIsApplicationModalOpen(false)}
-      />
+      {/* Associate Partner Application Modal */}
+      {isApplicationModalOpen && (
+        <AssociateRegistrationPage
+          isModal={true}
+          onClose={() => setIsApplicationModalOpen(false)}
+          onSuccessReturn={() => setIsApplicationModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

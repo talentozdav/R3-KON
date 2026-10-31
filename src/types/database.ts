@@ -12,10 +12,12 @@ export type UserRole =
 
 export type ApplicationStatus = 
   | 'submitted' 
+  | 'pending_review'
   | 'under_review' 
   | 'info_requested' 
   | 'approved' 
   | 'rejected' 
+  | 'suspended'
   | 'withdrawn';
 
 export type AffiliateStatus = 
@@ -84,6 +86,11 @@ export interface AffiliateApplication {
   industry_background: string;
   audience_description: string;
   partnership_objectives: string;
+  website_or_social?: string;
+  promotional_method?: string;
+  relevant_experience?: string;
+  reason_for_applying?: string;
+  referral_sponsor_code?: string;
   additional_notes?: string;
   status: ApplicationStatus;
   terms_accepted: boolean;

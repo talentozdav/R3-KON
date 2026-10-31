@@ -70,6 +70,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Filter states
   const [appStatusFilter, setAppStatusFilter] = useState('all');
   const [appSearch, setAppSearch] = useState('');
+  const [selectedApp, setSelectedApp] = useState<any | null>(null);
+  const [appInternalNote, setAppInternalNote] = useState('');
 
   // New conversion form state
   const [newConv, setNewConv] = useState({
@@ -449,12 +451,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Filtered applications
   const filteredApps = applications.filter((a) => {
-    const matchesStatus = appStatusFilter === 'all' || a.status === appStatusFilter;
+    const matchesStatus =
+      appStatusFilter === 'all' ||
+      a.status === appStatusFilter ||
+      (appStatusFilter === 'submitted' && (a.status === 'submitted' || a.status === 'pending_review'));
     const matchesSearch =
       !appSearch ||
       a.full_name?.toLowerCase().includes(appSearch.toLowerCase()) ||
       a.email?.toLowerCase().includes(appSearch.toLowerCase()) ||
-      a.country?.toLowerCase().includes(appSearch.toLowerCase());
+      a.country?.toLowerCase().includes(appSearch.toLowerCase()) ||
+      a.business_name?.toLowerCase().includes(appSearch.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -535,7 +541,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               activeTab === 'applications' ? 'border-[#D4AF37] text-white font-bold' : 'border-transparent hover:text-white'
             }`}
           >
-            Applications ({applications.filter((a) => a.status === 'submitted').length} new)
+            Affiliate Partnership Management ({applications.filter((a) => a.status === 'submitted' || a.status === 'pending_review').length} new)
           </button>
           <button
             onClick={() => setActiveTab('affiliates')}
@@ -680,9 +686,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
-        {/* 2. TAB: APPLICATIONS */}
+        {/* 2. TAB: AFFILIATE PARTNERSHIP MANAGEMENT & APPLICATIONS */}
         {activeTab === 'applications' && (
           <div className="space-y-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 rounded-lg bg-white border border-slate-200 shadow-xs">
+              <div>
+                <h2 className="text-base font-bold text-[#0A192F]">
+                  Affiliate Partnership Management
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Review associate applications, conduct compliance due diligence, activate/suspend partner credentials, and inspect referral performance.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('affiliates')}
+                  className="px-3 py-1.5 text-xs font-semibold text-[#0A192F] bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 cursor-pointer"
+                >
+                  View Active Associates ({affiliates.length}) →
+                </button>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div className="relative w-full sm:w-64">
@@ -691,7 +716,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={appSearch}
                     onChange={(e) => setAppSearch(e.target.value)}
-                    placeholder="Search applicant name, email..."
+                    placeholder="Search applicant name, email, firm..."
                     className="w-full text-xs pl-8 pr-3 py-2 rounded border border-slate-300 bg-white focus:outline-hidden"
                   />
                 </div>
@@ -700,11 +725,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setAppStatusFilter(e.target.value)}
                   className="text-xs px-3 py-2 rounded border border-slate-300 bg-white focus:outline-hidden"
                 >
-                  <option value="all">All Statuses</option>
-                  <option value="submitted">Submitted</option>
+                  <option value="all">All Statuses ({applications.length})</option>
+                  <option value="submitted">Pending Review / Submitted</option>
                   <option value="under_review">Under Review</option>
+                  <option value="info_requested">Info Requested</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
+                  <option value="suspended">Suspended</option>
                 </select>
               </div>
 
@@ -737,11 +764,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <td className="px-6 py-3">
                             <div className="font-semibold text-slate-900">{app.full_name}</div>
                             <div className="text-[11px] text-slate-500">
-                              {app.business_name || 'Individual Consultant'} · {app.email}
+                              {app.business_name ? `${app.business_name} · ` : ''}{app.email}
                             </div>
                           </td>
                           <td className="px-6 py-3 text-slate-700">{app.country}</td>
-                          <td className="px-6 py-3 text-slate-700">{app.partnership_type}</td>
+                          <td className="px-6 py-3 text-slate-700">
+                            {app.partnership_type || app.promotional_method || 'Advisory Partner'}
+                          </td>
                           <td className="px-6 py-3">
                             <span
                               className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
@@ -749,12 +778,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                                   : app.status === 'under_review'
                                   ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                                  : app.status === 'submitted'
+                                  : app.status === 'info_requested'
+                                  ? 'bg-purple-50 text-purple-800 border border-purple-200'
+                                  : app.status === 'submitted' || app.status === 'pending_review'
                                   ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                  : app.status === 'suspended'
+                                  ? 'bg-orange-50 text-orange-800 border border-orange-200'
                                   : 'bg-red-50 text-red-800 border border-red-200'
                               }`}
                             >
-                              {app.status.replace('_', ' ').toUpperCase()}
+                              {app.status ? app.status.replace('_', ' ').toUpperCase() : 'PENDING'}
                             </span>
                           </td>
                           <td className="px-6 py-3 text-slate-500 font-mono">
@@ -762,12 +795,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </td>
                           <td className="px-6 py-3 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedApp(app);
+                                  setAppInternalNote(app.internal_notes || '');
+                                }}
+                                className="px-2.5 py-1 text-[11px] font-semibold text-[#0A192F] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded cursor-pointer"
+                              >
+                                View Dossier
+                              </button>
                               {app.status !== 'approved' && (
                                 <button
                                   onClick={() => handleUpdateAppStatus(app.id, 'approved', 'Compliance verification confirmed.')}
                                   className="px-2.5 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded cursor-pointer"
                                 >
-                                  Approve & Invite
+                                  Approve
                                 </button>
                               )}
                               {app.status !== 'rejected' && app.status !== 'approved' && (
@@ -787,6 +829,160 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Applicant Details Dossier Modal */}
+            {selectedApp && (
+              <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden my-8">
+                  <div className="px-6 py-4 border-b border-slate-200 bg-[#0A192F] text-white flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold">Associate Applicant Dossier: {selectedApp.full_name}</h3>
+                      <p className="text-[11px] text-slate-300">ID: {selectedApp.id}</p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedApp(null)}
+                      className="text-slate-400 hover:text-white cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="p-6 max-h-[75vh] overflow-y-auto space-y-4 text-xs">
+                    <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-100">
+                      <div>
+                        <span className="text-slate-500">Applicant Legal Structure:</span>
+                        <div className="font-semibold text-slate-800 capitalize mt-0.5">
+                          {selectedApp.applicant_type} {selectedApp.business_name ? `(${selectedApp.business_name})` : ''}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Country of Domicile:</span>
+                        <div className="font-semibold text-slate-800 mt-0.5">{selectedApp.country}</div>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Corporate Email:</span>
+                        <div className="font-mono text-slate-800 mt-0.5">{selectedApp.email}</div>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Direct Telephone:</span>
+                        <div className="font-mono text-slate-800 mt-0.5">{selectedApp.phone}</div>
+                      </div>
+                      {selectedApp.website_or_social && (
+                        <div className="col-span-2">
+                          <span className="text-slate-500">Website or Profile:</span>
+                          <div className="font-mono text-[#0A192F] mt-0.5 truncate">
+                            <a href={selectedApp.website_or_social} target="_blank" rel="noreferrer" className="hover:underline">
+                              {selectedApp.website_or_social}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                      {selectedApp.referral_sponsor_code && (
+                        <div>
+                          <span className="text-slate-500">Referral / Sponsor Code:</span>
+                          <div className="font-mono font-bold text-[#0A192F] mt-0.5">{selectedApp.referral_sponsor_code}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <span className="text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                        Preferred Promotional Method & Scope:
+                      </span>
+                      <div className="p-3 mt-1 rounded bg-[#FAF9F6] border border-slate-200 text-slate-700">
+                        {selectedApp.promotional_method || selectedApp.partnership_type || 'Direct Advisory Representation'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                        Relevant Experience & Advisory Tenure:
+                      </span>
+                      <div className="p-3 mt-1 rounded bg-[#FAF9F6] border border-slate-200 text-slate-700 whitespace-pre-wrap">
+                        {selectedApp.relevant_experience || selectedApp.industry_background || 'N/A'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                        Reason for Applying & Objectives:
+                      </span>
+                      <div className="p-3 mt-1 rounded bg-[#FAF9F6] border border-slate-200 text-slate-700 whitespace-pre-wrap">
+                        {selectedApp.reason_for_applying || selectedApp.partnership_objectives || 'N/A'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                        Internal Compliance & Review Notes:
+                      </span>
+                      <textarea
+                        rows={2}
+                        value={appInternalNote}
+                        onChange={(e) => setAppInternalNote(e.target.value)}
+                        placeholder="Add internal compliance assessment notes..."
+                        className="w-full text-xs p-2.5 mt-1 rounded border border-slate-300 focus:outline-hidden"
+                      />
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-[11px] text-slate-500">
+                        Current Status: <strong className="uppercase text-[#0A192F]">{selectedApp.status}</strong>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => {
+                            handleUpdateAppStatus(selectedApp.id, 'info_requested', appInternalNote || 'Additional documentation requested.');
+                            setSelectedApp(null);
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded cursor-pointer"
+                        >
+                          Request Info
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleUpdateAppStatus(selectedApp.id, 'under_review', appInternalNote || 'Dossier escalated for compliance review.');
+                            setSelectedApp(null);
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded cursor-pointer"
+                        >
+                          Under Review
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleUpdateAppStatus(selectedApp.id, 'suspended', appInternalNote || 'Suspended by administrative action.');
+                            setSelectedApp(null);
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded cursor-pointer"
+                        >
+                          Suspend
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleUpdateAppStatus(selectedApp.id, 'rejected', appInternalNote || 'Rejected by administrative action.');
+                            setSelectedApp(null);
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded cursor-pointer"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleUpdateAppStatus(selectedApp.id, 'approved', appInternalNote || 'Compliance verified and approved.');
+                            setSelectedApp(null);
+                          }}
+                          className="px-4 py-1.5 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded cursor-pointer shadow-xs"
+                        >
+                          Approve & Activate
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

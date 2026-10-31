@@ -325,6 +325,132 @@ async function runTestSuite() {
     scanUnbundledPaths(path.resolve('./src'));
     assert(unbundledReferences.length === 0, 'Zero raw /src/assets/ strings in frontend components', unbundledReferences.join(', '));
 
+    // ---------------------------------------------------------
+    // TEST SUITE 10: AFFILIATE PARTNERSHIP & MEMBER SYSTEM VERIFICATION
+    // ---------------------------------------------------------
+    console.log('\n[10/10] Affiliate Partnership Programme & Member System Audit:');
+
+    // 1. Submit complete 13-field Associate Application
+    const associateAppData = {
+      applicant_type: 'individual',
+      full_name: 'Genevieve Vance',
+      email: 'genevieve.vance@privatefamilyoffice.ch',
+      phone: '+41 22 710 9900',
+      country: 'Switzerland',
+      company_name: 'Vance Advisory S.A.',
+      tax_or_id_number: 'CHE-109.843.212',
+      payout_method_preference: 'wire',
+      website_or_social: 'https://vanceadvisory.ch',
+      promotional_method: 'Private wealth advisory, UHNW family office introductions and diplomatic security consultations.',
+      relevant_experience: '15+ years managing ultra-high-net-worth private client assets and international crisis contingencies.',
+      reason_for_applying: 'Our family office clientele requires immediate, bespoke physical extraction and medical emergency standby.',
+      referral_sponsor_code: 'R3-HQ',
+      terms_accepted: true
+    };
+
+    const applyRes = await request(testServer, 'POST', '/api/applications/apply', {
+      'x-r3-test-fixture': 'true'
+    }, associateAppData);
+
+    assert(
+      applyRes.status === 200 || applyRes.status === 201,
+      'POST /api/applications/apply accepts 13-field payload and returns 200/201',
+      `Got status ${applyRes.status}: ${JSON.stringify(applyRes.body)}`
+    );
+    assert(
+      Boolean(applyRes.body?.application_reference),
+      'Associate application returns immutable application_reference',
+      JSON.stringify(applyRes.body)
+    );
+    assert(
+      applyRes.body?.status === 'pending_review' || applyRes.body?.status === 'submitted',
+      'Associate application defaults to pending_review/submitted without auto-granting active affiliate access',
+      applyRes.body?.status
+    );
+
+    const createdAppId = applyRes.body?.id || applyRes.body?.application_reference;
+
+    // 2. Public Application Status Verification
+    if (createdAppId) {
+      const statusRes = await request(
+        testServer,
+        'GET',
+        `/api/applications/${createdAppId}/status?email=${encodeURIComponent('genevieve.vance@privatefamilyoffice.ch')}`,
+        { 'x-r3-test-fixture': 'true' }
+      );
+      assert(
+        statusRes.status === 200 && Boolean(statusRes.body?.status),
+        'GET /api/applications/:id/status verifies applicant status with email confirmation',
+        `Status: ${statusRes.status}, Body: ${JSON.stringify(statusRes.body)}`
+      );
+
+      // Verify status check fails with wrong email
+      const wrongEmailRes = await request(
+        testServer,
+        'GET',
+        `/api/applications/${createdAppId}/status?email=imposter@unknown.com`,
+        { 'x-r3-test-fixture': 'true' }
+      );
+      assert(
+        wrongEmailRes.status === 404 || wrongEmailRes.status === 403,
+        'GET /api/applications/:id/status rejects status lookups when email does not match applicant',
+        `Status: ${wrongEmailRes.status}`
+      );
+    }
+
+    // 3. Member / Client Authentication
+    const memberLoginRes = await request(testServer, 'POST', '/api/member/login', {
+      'x-r3-test-fixture': 'true'
+    }, {
+      email: 'client@r3contingencies.com'
+    });
+    assert(
+      memberLoginRes.status === 200 && memberLoginRes.body?.token,
+      'POST /api/member/login authenticates client/member account and issues token',
+      `Status: ${memberLoginRes.status}`
+    );
+
+    const memberToken = memberLoginRes.body?.token;
+
+    // 4. Member Dashboard Retrieval
+    if (memberToken) {
+      const memberDashRes = await request(testServer, 'GET', '/api/member/dashboard', {
+        'Authorization': `Bearer ${memberToken}`,
+        'x-r3-test-fixture': 'true'
+      });
+      assert(
+        memberDashRes.status === 200 && memberDashRes.body?.member?.tier_status,
+        'GET /api/member/dashboard returns tier_status and standby reserve benefits',
+        `Status: ${memberDashRes.status}, Tier: ${memberDashRes.body?.member?.tier_status}`
+      );
+    }
+
+    // 5. Affiliate Dashboard Lead Masking / Privacy Check (Zero Customer PII)
+    const affDashRes = await request(testServer, 'GET', '/api/affiliate/dashboard', {
+      'x-r3-test-fixture': 'true',
+      'x-r3-test-role': 'affiliate'
+    });
+    assert(
+      affDashRes.status === 200 && Array.isArray(affDashRes.body?.leads),
+      'GET /api/affiliate/dashboard returns attributed inquiries/leads list',
+      `Status: ${affDashRes.status}`
+    );
+
+    // Verify zero PII leakage in leads
+    const leads = affDashRes.body?.leads || [];
+    let piiExposed = false;
+    for (const lead of leads) {
+      if (lead.email || lead.phone || (lead.full_name && !lead.full_name.startsWith('LEAD-') && !lead.full_name.startsWith('REF-'))) {
+        piiExposed = true;
+        break;
+      }
+    }
+    assert(
+      !piiExposed,
+      'Affiliate portal leads maintain strict zero-customer-PII privacy masking',
+      `Inspected ${leads.length} leads`
+    );
+
   } finally {
     testServer.close();
   }

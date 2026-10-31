@@ -86,28 +86,33 @@ export const Footer: React.FC<FooterProps> = ({
 
           <div>
             <h4 className="text-xs font-semibold tracking-wider text-[#D4AF37] uppercase mb-3">
-              Partner Representation
+              Associate Partnership
             </h4>
             <ul className="space-y-2 text-xs text-slate-400">
               <li>
-                <button onClick={() => setCurrentView('affiliates')} className="hover:text-white transition-colors cursor-pointer">
-                  Affiliate Program Overview
+                <button onClick={() => setCurrentView('affiliate-partnership')} className="hover:text-white transition-colors cursor-pointer text-[#D4AF37]">
+                  Associate Programme Overview
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setCurrentView('associate-register')} className="hover:text-white transition-colors cursor-pointer">
+                  Become an R3 Associate
                 </button>
               </li>
               <li>
                 <button onClick={onOpenAffiliateAuth} className="hover:text-white transition-colors cursor-pointer">
-                  Partner Portal Login
+                  Associate Portal Login
                 </button>
               </li>
               <li>
-                <a href="#compliance" className="hover:text-white transition-colors">
-                  Compliance & Referral Standards
-                </a>
+                <button onClick={() => setCurrentView('affiliate-partnership')} className="hover:text-white transition-colors cursor-pointer">
+                  Referral & Attribution Rules
+                </button>
               </li>
               <li>
-                <a href="#privacy" className="hover:text-white transition-colors">
-                  International Non-Disclosure Terms
-                </a>
+                <button onClick={() => setCurrentView('affiliate-partnership')} className="hover:text-white transition-colors cursor-pointer">
+                  Monthly Payout Settlement Terms
+                </button>
               </li>
             </ul>
           </div>

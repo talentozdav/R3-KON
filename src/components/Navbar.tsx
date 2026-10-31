@@ -4,12 +4,13 @@ import type { UserRole } from '../types/database.ts';
 import { r3Logo } from '../assets/images/index.ts';
 
 interface NavbarProps {
-  currentView: 'home' | 'about' | 'services' | 'membership' | 'flex-funds' | 'affiliates' | 'contact' | 'affiliate-portal' | 'admin-dashboard';
+  currentView: string;
   setCurrentView: (view: any) => void;
   activeRole: UserRole | null;
   onOpenAffiliateAuth: () => void;
   onOpenClientRegistration: () => void;
   onOpenApplication: () => void;
+  onOpenMemberAuth?: () => void;
   onLogout?: () => void;
 }
 
@@ -20,13 +21,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAffiliateAuth,
   onOpenClientRegistration,
   onOpenApplication,
+  onOpenMemberAuth,
   onLogout
 }) => {
-  const isPortalOrAdmin = currentView === 'affiliate-portal' || currentView === 'admin-dashboard';
+  const isPortalOrAdmin = currentView === 'affiliate-portal' || currentView === 'admin-dashboard' || currentView === 'member-portal';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-8 px-6 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-6 py-3.5">
         {/* Brand Logo Wordmark */}
         <button
           onClick={() => setCurrentView('home')}
@@ -39,15 +41,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           />
         </button>
 
-        {/* Clean Public Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-600">
+        {/* Clean Public Navigation Links: Home, About R3, Services, Membership, Affiliate Partnership, Contact */}
+        <nav className="hidden xl:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <button
+            onClick={() => setCurrentView('home')}
+            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              currentView === 'home' ? 'text-[#0A192F] font-semibold' : 'hover:text-[#0A192F]'
+            }`}
+          >
+            Home
+          </button>
           <button
             onClick={() => setCurrentView('about')}
             className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               currentView === 'about' ? 'text-[#0A192F] font-semibold' : 'hover:text-[#0A192F]'
             }`}
           >
-            About
+            About R3
           </button>
           <button
             onClick={() => setCurrentView('services')}
@@ -66,20 +76,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             Membership
           </button>
           <button
-            onClick={() => setCurrentView('flex-funds')}
+            onClick={() => setCurrentView('affiliate-partnership')}
             className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              currentView === 'flex-funds' ? 'text-[#0A192F] font-semibold' : 'hover:text-[#0A192F]'
+              currentView === 'affiliate-partnership' ? 'text-[#0A192F] font-semibold' : 'hover:text-[#0A192F]'
             }`}
           >
-            Flex Funds
-          </button>
-          <button
-            onClick={() => setCurrentView('affiliates')}
-            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              currentView === 'affiliates' ? 'text-[#0A192F] font-semibold' : 'hover:text-[#0A192F]'
-            }`}
-          >
-            Affiliates
+            Affiliate Partnership
           </button>
           <button
             onClick={() => setCurrentView('contact')}
@@ -91,47 +93,70 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Action Controls: Customer-facing + Partner Portal Only */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          {/* Client Registration Button */}
+        {/* Action Controls: Distinct Pathways (Membership & Affiliate) */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* PATHWAY 1: MEMBERSHIP CONTROLS */}
           {!isPortalOrAdmin && (
-            <button
-              onClick={onOpenClientRegistration}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#0A192F] bg-amber-50 hover:bg-amber-100 border border-[#D4AF37]/50 rounded-md transition-colors whitespace-nowrap cursor-pointer shadow-2xs"
-            >
-              <UserPlus className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>Client Registration</span>
-            </button>
+            <>
+              {activeRole === 'client' ? (
+                <button
+                  onClick={() => setCurrentView('member-portal')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors cursor-pointer"
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-blue-700" />
+                  <span>Member Portal</span>
+                </button>
+              ) : (
+                <>
+                  {onOpenMemberAuth && (
+                    <button
+                      onClick={onOpenMemberAuth}
+                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-[#0A192F] hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                      title="Member Portal Login"
+                    >
+                      <span>Member Login</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={onOpenClientRegistration}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#0A192F] bg-amber-50 hover:bg-amber-100 border border-[#D4AF37]/50 rounded-md transition-colors whitespace-nowrap cursor-pointer shadow-2xs"
+                  >
+                    <UserPlus className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    <span>Client Registration</span>
+                  </button>
+                </>
+              )}
+            </>
           )}
 
-          {/* Partner Portal Login / Access */}
-          {activeRole === 'affiliate' ? (
-            <button
-              onClick={() => setCurrentView('affiliate-portal')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors whitespace-nowrap cursor-pointer"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Partner Portal</span>
-            </button>
-          ) : (
-            <button
-              onClick={onOpenAffiliateAuth}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-md transition-colors whitespace-nowrap cursor-pointer"
-              title="Affiliate Representative Portal Login"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-slate-500" />
-              <span>Partner Portal</span>
-            </button>
-          )}
-
-          {/* Apply as Partner */}
+          {/* PATHWAY 2: AFFILIATE PARTNER CONTROLS */}
           {!isPortalOrAdmin && (
-            <button
-              onClick={onOpenApplication}
-              className="hidden sm:inline-block px-3.5 py-1.5 text-xs font-semibold text-white bg-[#0A192F] hover:bg-[#112240] rounded-md transition-colors whitespace-nowrap cursor-pointer shadow-xs border border-[#D4AF37]/30"
-            >
-              Apply as Partner
-            </button>
+            <>
+              {activeRole === 'affiliate' ? (
+                <button
+                  onClick={() => setCurrentView('affiliate-portal')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors whitespace-nowrap cursor-pointer"
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Associate Portal</span>
+                </button>
+              ) : (
+                <button
+                  onClick={onOpenAffiliateAuth}
+                  className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-md transition-colors whitespace-nowrap cursor-pointer"
+                  title="Associate Partner Portal Login"
+                >
+                  <span>Associate Portal</span>
+                </button>
+              )}
+
+              <button
+                onClick={onOpenApplication}
+                className="px-3 py-1.5 text-xs font-semibold text-white bg-[#0A192F] hover:bg-[#112240] rounded-md transition-colors whitespace-nowrap cursor-pointer shadow-xs border border-[#D4AF37]/30"
+              >
+                Become an Associate
+              </button>
+            </>
           )}
 
           {/* If inside portal or admin */}

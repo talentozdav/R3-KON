@@ -26,7 +26,7 @@ interface AffiliatePortalProps {
 export const AffiliatePortal: React.FC<AffiliatePortalProps> = ({ token, onLogout }) => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'events' | 'leads' | 'conversions' | 'ledger' | 'payouts'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'events' | 'leads' | 'conversions' | 'ledger' | 'payouts' | 'materials' | 'settings'>('overview');
   const [copied, setCopied] = useState(false);
   const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
 
@@ -123,7 +123,7 @@ export const AffiliatePortal: React.FC<AffiliatePortalProps> = ({ token, onLogou
     );
   }
 
-  const { affiliate, stats, referralCodes, conversions, ledger, payouts, recentEvents } = data;
+  const { affiliate, stats, referralCodes, conversions, ledger, payouts, recentEvents, leads = [] } = data;
   const primaryCode = referralCodes[0]?.code || affiliate.affiliate_number;
   const siteUrl = window.location.origin;
   const referralLink = `${siteUrl}/?ref=${primaryCode}`;
@@ -197,6 +197,16 @@ export const AffiliatePortal: React.FC<AffiliatePortalProps> = ({ token, onLogou
             My Referral Links
           </button>
           <button
+            onClick={() => setActiveTab('leads')}
+            className={`py-3 px-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'leads'
+                ? 'border-[#0A192F] text-[#0A192F] font-bold'
+                : 'border-transparent hover:text-slate-900'
+            }`}
+          >
+            Attributed Inquiries ({leads.length})
+          </button>
+          <button
             onClick={() => setActiveTab('conversions')}
             className={`py-3 px-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'conversions'
@@ -225,6 +235,26 @@ export const AffiliatePortal: React.FC<AffiliatePortalProps> = ({ token, onLogou
             }`}
           >
             Monthly Payouts ({payouts.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('materials')}
+            className={`py-3 px-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'materials'
+                ? 'border-[#0A192F] text-[#0A192F] font-bold'
+                : 'border-transparent hover:text-slate-900'
+            }`}
+          >
+            Promotional Materials
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`py-3 px-3 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'settings'
+                ? 'border-[#0A192F] text-[#0A192F] font-bold'
+                : 'border-transparent hover:text-slate-900'
+            }`}
+          >
+            Settings & Support
           </button>
         </div>
       </div>
@@ -691,6 +721,191 @@ export const AffiliatePortal: React.FC<AffiliatePortalProps> = ({ token, onLogou
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 6: ATTRIBUTED INQUIRIES & LEADS (PRIVACY PROTECTED) */}
+        {activeTab === 'leads' && (
+          <div className="rounded-lg border border-slate-200 bg-white overflow-hidden shadow-xs space-y-4">
+            <div className="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-[#0A192F]">
+                  Attributed Prospective Inquiries & Client Registrations
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Prospective clients attributed to your tracking links within the active 60-day window.
+                </p>
+              </div>
+              <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
+                🔒 Privacy-Sanitized Ledger
+              </span>
+            </div>
+
+            <div className="px-6 pt-1">
+              <div className="p-3 rounded-md bg-amber-50/70 border border-amber-200/60 text-xs text-slate-700">
+                <strong>Discretion Notice:</strong> In compliance with international privacy regulations and R3 client governance, personal names, direct telephone lines, and private dossier records are masked. Once an introduced lead completes an annual retainer, the conversion appears under Sales Conversions for administrative verification.
+              </div>
+            </div>
+
+            {leads.length === 0 ? (
+              <div className="py-12 text-center text-xs text-slate-500">
+                No attributed inquiries logged yet. Share your referral code or custom tracking link to begin registering client interest.
+              </div>
+            ) : (
+              <div className="overflow-x-auto pb-4">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-[#FAF9F6] text-slate-500 font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-3">Attribution Reference</th>
+                      <th className="px-6 py-3">Prospect Structure</th>
+                      <th className="px-6 py-3">Registration Date</th>
+                      <th className="px-6 py-3">Lifecycle Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-mono">
+                    {leads.map((ld: any, idx: number) => (
+                      <tr key={ld.id || idx} className="hover:bg-slate-50/50">
+                        <td className="px-6 py-3 font-medium text-slate-800">
+                          {ld.id}
+                        </td>
+                        <td className="px-6 py-3 font-sans capitalize text-slate-700">
+                          {ld.client_type === 'business' ? 'Corporate / Family Office' : 'Private Individual'}
+                        </td>
+                        <td className="px-6 py-3 text-slate-500">
+                          {new Date(ld.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-3">
+                          <span className={`font-sans text-[11px] font-semibold px-2 py-0.5 rounded capitalize ${
+                            ld.status === 'converted'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : ld.status === 'in_discussion'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {ld.status ? ld.status.replace('_', ' ') : 'Attributed Lead'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 7: PROMOTIONAL MATERIALS & GUIDELINES */}
+        {activeTab === 'materials' && (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
+              <h3 className="text-base font-bold text-[#0A192F]">
+                Institutional Representation Materials
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Use only approved R3 Contingencies copy and briefs when introducing prospective clients. All materials must reflect the highest institutional standards of discretion and prestige.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 rounded-lg border border-slate-200 bg-white space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded bg-[#0A192F] text-[#D4AF37] flex items-center justify-center">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#0A192F]">Approved Executive Introduction Copy</h4>
+                    <span className="text-[11px] text-slate-500">For Private Wealth Briefings & Memos</span>
+                  </div>
+                </div>
+                <div className="p-4 rounded bg-[#FAF9F6] border border-slate-200 text-xs text-slate-700 leading-relaxed italic select-all">
+                  "R3 Contingencies provides sovereign crisis coordination, rapid aeromedical evacuation, and armored logistics for private family offices and multinational corporations. Membership retainers guarantee immediate dispatch readiness and direct access to emergency Flex Funds liquidity reserves."
+                </div>
+                <button
+                  onClick={() => copyToClipboard(`R3 Contingencies provides sovereign crisis coordination, rapid aeromedical evacuation, and armored logistics for private family offices and multinational corporations. Learn more via my authorized partner link: ${referralLink}`)}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded cursor-pointer"
+                >
+                  Copy Intro Snippet
+                </button>
+              </div>
+
+              <div className="p-6 rounded-lg border border-slate-200 bg-white space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded bg-[#0A192F] text-[#D4AF37] flex items-center justify-center">
+                    <Shield className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#0A192F]">Compliance & Promotion Standards</h4>
+                    <span className="text-[11px] text-slate-500">Mandatory Associate Governance</span>
+                  </div>
+                </div>
+                <ul className="text-xs text-slate-600 space-y-2 list-disc list-inside">
+                  <li>Never make unapproved earnings or commission guarantees.</li>
+                  <li>Do not use public spam, unsolicited messaging, or deceptive promotional methods.</li>
+                  <li>All client introductions must be genuine, voluntary, and verified by R3 Compliance.</li>
+                  <li>Preserve absolute discretion regarding R3 operations, protocols, and flight assets.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 8: SETTINGS & SUPPORT */}
+        {activeTab === 'settings' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg border border-slate-200 bg-white space-y-4">
+              <h3 className="text-sm font-bold text-[#0A192F]">
+                Associate Account Profile
+              </h3>
+              <div className="text-xs divide-y divide-slate-100">
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Associate Number:</span>
+                  <span className="font-mono font-bold text-[#0A192F]">{affiliate.affiliate_number}</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Accredited Name:</span>
+                  <span className="font-semibold text-slate-800">{affiliate.profile?.full_name}</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Authorized Email:</span>
+                  <span className="font-mono text-slate-800">{affiliate.profile?.email}</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Country of Domicile:</span>
+                  <span className="text-slate-800">{affiliate.country}</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Payout Settlement Currency:</span>
+                  <span className="font-mono font-bold text-[#0A192F]">{affiliate.payout_currency || 'USD'}</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Tax Verification Status:</span>
+                  <span className="text-emerald-700 font-semibold">{affiliate.tax_id_verified ? 'Verified On File' : 'Exempt / Corporate Domicile'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-lg border border-slate-200 bg-white space-y-4">
+              <h3 className="text-sm font-bold text-[#0A192F]">
+                Dedicated Partner Advisory Desk
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Need customized briefing materials, contract assistance, or multi-party client conference support? Our Associate Liaison team is at your disposal.
+              </p>
+              <div className="p-4 rounded-md bg-[#FAF9F6] border border-slate-200 space-y-2 text-xs">
+                <div>
+                  <span className="text-slate-500">Partner Desk Email:</span>
+                  <div className="font-mono font-bold text-[#0A192F] mt-0.5">r3affiliate.network@gmail.com</div>
+                </div>
+                <div>
+                  <span className="text-slate-500">Direct Partner Hotline:</span>
+                  <div className="font-mono font-bold text-[#0A192F] mt-0.5">+1 (931) 366-0615</div>
+                </div>
+                <div>
+                  <span className="text-slate-500">Global Coordination HQ:</span>
+                  <div className="text-slate-700 mt-0.5">Geneva • London • Zurich</div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
